@@ -1,0 +1,21 @@
+<package>
+  <description brief="Orogen component to detect fiducial markers using AprilTags">
+  
+  </description>
+  <author>Diego Cesar/diego.cesar@fieb.org.br</author>
+  <license></license>
+  <url>http://</url>
+  <logo>http://</logo>
+  <depend package="base/cmake" />
+  <!--
+   To add any dependencies use the depend tag
+  <depend package="dummy-dependency-0" />
+	...
+  <depend package="dummy-dependency-n-1" />
+  <depend package="dummy-dependency-n" />
+  -->
+  <depend package="image_processing/apriltags" />
+  <depend package="image_processing/frame_helper" />
+  <depend package="base/types" />
+  <depend package="opencv" />
+</package>
