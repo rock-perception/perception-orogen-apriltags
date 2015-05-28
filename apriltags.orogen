@@ -38,8 +38,9 @@ task_context "Task" do
         .doc 'Image that shows the detected markers'
     output_port("marker_poses", "std/vector<base::samples::RigidBodyState>")
         .doc 'It contains the calculated marker poses in respect to camera frame of all visible markers'
-    output_port("calibration_parameters", "frame_helper/CameraCalibration")
-	.doc 'Writes the camera calibration to be acessible to other components'
+    output_port("detected_corners", "std/vector<base::Vector2d>")
+     	.doc 'Writes the camera calibration to be acessible to other components' 	
+     	
 
     port_driven "image"
 end

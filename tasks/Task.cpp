@@ -89,7 +89,6 @@ void Task::updateHook()
     		image = temp;
     	}
 
-
     	//TODO: Create a enum with the tag_codes;
 
     	//set the apriltag family
@@ -111,6 +110,7 @@ void Task::updateHook()
     	int maxiters = 1;
     	const int hamm_hist_max = 10;
 
+    	std::vector<base::Vector2d> corners;
     	//main loop
     	for (int iter = 0; iter < maxiters; iter++)
     	{
@@ -153,10 +153,16 @@ void Task::updateHook()
 						" roll: "  << rbs.getRoll()*180/M_PI  <<
 						" pitch: " << rbs.getPitch()*180/M_PI <<
 						" yaw: "   << rbs.getYaw()*180/M_PI   <<
-						" extract_time: " << dt*1000 << " ms" <<
-						" pixel_size: " << det->p[1][1] - det->p[0][1] << std::endl;
+						" extract_time: " << dt*1000 << " ms" << std::endl;
 
-    			std::cout << " extract_time: " << dt*1000 << " ms" << std::endl;
+    			for (int i=0; i < 4; ++i)
+    			{
+    				base::Vector2d aux;
+    				aux[0] = det->p[i][0];
+					aux[1] = det->p[i][1];
+					corners.push_back(aux);
+    			}
+
 
     			if (!_quiet.get())
     				printf("detection %3d: id (%2dx%2d)-%-4d, hamming %d, goodness %8.3f, margin %8.3f\n",
@@ -202,12 +208,17 @@ void Task::updateHook()
     		//write the markers in the output port
     		if (rbs_vector.size() != 0)
     		{
-    			rbs_vector.clear();
+    			_detected_corners.write(corners);
+    			corners.clear();
+    		}
+
+    		//write the markers in the output port
+    		if (rbs_vector.size() != 0)
+    		{
     			_marker_poses.write(rbs_vector);
+    			rbs_vector.clear();
     		}
     	}
-
-
     	apriltag_detector_destroy(td);
     	tag36h11_destroy(tf);
     }

@@ -1,0 +1,127 @@
+--- name:default
+# count of frames if grab mode is MultiFrame
+acquisition_frame_count: 200
+
+auto_exposure_factor: 3
+
+auto_exposure_target_value: 100
+
+auto_exposure_tolerance: 10
+# horizontal binning. 1=no binning.
+binning_x: 1
+# vertical binning. 1=no binning.
+binning_y: 1
+# Calibration parameters for the camera, which are used to undistort and are added as attributes to the frames
+calibration_parameters:
+  fx: .nan
+  fy: .nan
+  cx: .nan
+  cy: .nan
+  d0: .nan
+  d1: .nan
+  d2: .nan
+  d3: .nan
+  width: -1
+  height: -1
+  ex: .nan
+  ey: .nan
+# output format of the camera --> not the output port! see below
+camera_format: :MODE_BAYER
+# unique camerea id
+camera_id: '105984'
+# bit depth per channel
+channel_data_depth: 8
+# if the queue is empty because retrieve was called too rarely clear buffer
+clear_buffer_if_frame_drop: false
+# no data are written to frame_raw if set to true
+disable_frame_raw: true
+# exposure value if exposure mode is not auto
+exposure: 5000
+# exposure mode (auto, manual, external, none)
+exposure_mode: auto
+# frames per second
+fps: 10
+# size of the frame buffer
+frame_buffer_size: 10
+# External trigger event, allowed values:  EdgeRising, EdgeFalling, EdgeAny, LevelHigh, LevelLow, none
+frame_start_trigger_event: none
+# gain value
+gain: 0
+# gain mode
+gain_mode_auto: true
+# turns gamma on or off
+gamma: true
+# grab mode (Stop, SingleFrame, MultiFrame, Continuously)
+grab_mode: :Continuously
+# height of the camera frame
+height: 480
+# interval for logging a statistic about valid and invalid frames per second (0= logging of) -> it is saved as frame attrib StatFrameRate
+log_interval_in_sec: 5
+
+metadata:
+  metadata: []
+  properties: []
+  input_ports: []
+  output_ports: []
+# opening mode (Master, Monitor, MasterMulticast)
+mode: Master
+# the offset to be used on the left margin in case of scaling
+offset_x: 0
+# the offset to be used on the left margin in case of scaling
+offset_y: 0
+# The camera_format is converted into this format before it is written to the output port 
+output_format: :MODE_UNDEFINED
+# In Bytes. Size of image data packet. This size includes the GVSP, UDP, and IP headers. (0 == max possible)
+package_size: 0
+# start of region readout, in pixels; left edge.
+region_x: 0
+# start of region readout, in pixels; top edge.
+region_y: 0
+# resize algorithm which is used to scale the frame before it is written to the output port. 
+resize_algorithm: :INTER_LINEAR
+# scale factor for the x direction which is used to scale the image before it is written to the output_port. 
+scale_x: 1.0
+# scale factor for the y direction which is used to scale the image before it is written to the output_port. 
+scale_y: 1.0
+# sync out1 mode (GPO, AcquisitionTriggerReady, FrameTriggerReady, FrameTrigger, Exposing, FrameReadout, Acquiring, SyncIn1, SyncIn2, Strobe1)
+sync_out1_mode: FrameTrigger
+# sync out2 mode (GPO, AcquisitionTriggerReady, FrameTriggerReady, FrameTrigger, Exposing, FrameReadout, Acquiring, SyncIn1, SyncIn2, Strobe1)
+sync_out2_mode: FrameTrigger
+# time interval in micro seconds which is used to synchronize camera time with system time. 0 == no synchronization
+synchronize_time_interval: 0
+# trigger mode of the camera, allowed values: freerun, fixed, sync_in1, none
+trigger_mode: fixed
+# true => undistort the image before it is writen to the output port
+undistort: false
+# How fast the Auto white balance will update.
+whitebalance_auto_rate: 100
+# Sets a range of scene color changes in which the automatic whitebalance will not respond.
+whitebalance_auto_threshold: 5
+# Blue gain expressed as a percentage of the camera default setting.
+whitebalance_blue: 100
+# whitebalance mode (auto, manual, auto_once, none)
+whitebalance_mode: auto
+# Red gain expressed as a percentage of the camera default setting.
+whitebalance_red: 100
+# width of the camera frame
+width: 640
+
+--- name:aravis_basler
+camera_id: '105716 - 16'
+width: 2040 
+height: 2040
+exposure: 90000
+gain: 1
+region_x: 0
+region_y: 0
+grab_mode: :Continuously			
+exposure_mode: 'auto'   			
+camera_format: :MODE_BAYER_GRBG
+#output_format: :MODE_RGB
+whitebalance_mode: 'auto'
+fps: 4
+#binning_x: 2
+scale_x: 0.5
+scale_y: 0.5
+resize_algorithm: :BAYER_RESIZE 
+#binning_y: 2

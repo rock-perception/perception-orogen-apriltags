@@ -1,0 +1,31 @@
+--- name:default
+# Calibration parameters for the camera, which are used to undistort and are added as attributes to the frames
+camera_calibration:
+  fx: 2357.13
+  cx: 1015.97
+  fy: 2344.9699
+  cy: 513.754
+  d0: 0.23414
+  d1: 0.536615
+  d2: -0.00716
+  d3: -0.018954
+  width: 1920
+  height: 1080
+  ex: .nan
+  ey: .nan
+# Write the image on the output_port
+draw_image: true
+# Value of the marker in meters
+marker_size: 0.183
+# no documentation available for this property
+metadata:
+  metadata: []
+  properties: []
+  input_ports: []
+  output_ports: []
+# Print the detection time on the screen
+print_time: true
+# Name of the source frame
+source_frame: camera_frame
+# Define the type of AprilTag, possible values are: 16h5, 25h7, 25h9, 36h9, 36h11
+tag_code: 36h11
