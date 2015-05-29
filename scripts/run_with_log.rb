@@ -19,13 +19,14 @@ Orocos.run 'apriltags::Task' => 'marker_detector'  do
     log = Orocos::Log::Replay.open(address)
 
     md = TaskContext.get_provides 'apriltags::Task'
-    md.apply_conf_file('./ConfigFiles/apriltags.yml',['default'])
+    md.apply_conf_file('./ConfigFiles/apriltags.yml',['flatfish_left_front'])
+    #md.apply_conf_file('./ConfigFiles/apriltags.yml',['default'])
     
   
     md.configure
 
-    #log.Camera.frame.connect_to md.image
-    log.camera.frame_raw.connect_to md.image
+    log.camera_front_left.frame.connect_to md.image
+    #log.camera.frame_raw.connect_to md.image
 
     md.start
      

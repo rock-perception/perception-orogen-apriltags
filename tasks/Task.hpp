@@ -46,7 +46,7 @@ namespace apriltags {
 	friend class TaskBase;
     protected:
 
-    std::string tag_code;
+    apriltags::ApriltagsConfig conf;
 
     cv::Mat camera_k, camera_dist;
     cv::Mat rvec, tvec;

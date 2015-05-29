@@ -25,129 +25,148 @@ Task::~Task()
 
 bool Task::configureHook()
 {
-    if (! TaskBase::configureHook())
-        return false;
+	if (! TaskBase::configureHook())
+		return false;
 
-    // setting camera matrix and distortion matrix
-    frame_helper::CameraCalibration cal = _camera_calibration.get();
-    camera_k = (cv::Mat_<double>(3,3) << cal.fx, 0, cal.cx, 0, cal.fy, cal.cy, 0, 0, 1);
-    camera_dist = (cv::Mat_<double>(1,4) << cal.d0, cal.d1, cal.d2, cal.d3);
+	// setting camera matrix and distortion matrix
+	frame_helper::CameraCalibration cal = _camera_calibration.get();
+	camera_k = (cv::Mat_<double>(3,3) << cal.fx, 0, cal.cx, 0, cal.fy, cal.cy, 0, 0, 1);
+	camera_dist = (cv::Mat_<double>(1,4) << cal.d0, cal.d1, cal.d2, cal.d3);
 
-    // setting immutable parameters
-    tag_code = _tag_code.get();
+	// setting immutable parameters
+	conf = _conf_param.get();
 
+	rvec.create(3,1,CV_32FC1);
+	tvec.create(3,1,CV_32FC1);
 
-    rvec.create(3,1,CV_32FC1);
-    tvec.create(3,1,CV_32FC1);
-
-    return true;
+	return true;
 }
 bool Task::startHook()
 {
-    if (! TaskBase::startHook())
-        return false;
-    return true;
+	if (! TaskBase::startHook())
+		return false;
+	return true;
 }
 void Task::updateHook()
 {
-    TaskBase::updateHook();
+	TaskBase::updateHook();
 
-    RTT::extras::ReadOnlyPointer<base::samples::frame::Frame> current_frame_ptr;
-    //main loop for detection in each input frame
-    for(int count=0; _image.read(current_frame_ptr) == RTT::NewData; ++count)
-    {
-    	//convert base::samples::frame::Frame to grayscale cv::Mat
-    	cv::Mat image;
-    	base::samples::frame::Frame temp_frame;
+	RTT::extras::ReadOnlyPointer<base::samples::frame::Frame> current_frame_ptr;
+	//main loop for detection in each input frame
+	for(int count=0; _image.read(current_frame_ptr) == RTT::NewData; ++count)
+	{
+		//convert base::samples::frame::Frame to grayscale cv::Mat
+		cv::Mat image;
+		base::samples::frame::Frame temp_frame;
 
-    	if (current_frame_ptr->isBayer())
-    	{
-    		frame_helper::FrameHelper::convertBayerToRGB24(*current_frame_ptr, temp_frame);
-    		image = frame_helper::FrameHelper::convertToCvMat(temp_frame);
-    		cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
-    	}
-    	else
-    		image = frame_helper::FrameHelper::convertToCvMat(*current_frame_ptr);
+		if (current_frame_ptr->isBayer())
+		{
+			frame_helper::FrameHelper::convertBayerToRGB24(*current_frame_ptr, temp_frame);
+			image = frame_helper::FrameHelper::convertToCvMat(temp_frame);
+			cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
+		}
+		else
+			image = frame_helper::FrameHelper::convertToCvMat(*current_frame_ptr);
 
-    	// convert to grayscale and undistort both images
-    	cv::Mat image_gray;
-    	if(image.channels() == 3)
-    	{
-    		cv::cvtColor(image, image_gray, cv::COLOR_RGB2GRAY);
-    		cv::Mat temp;
-    		cv::undistort(image_gray, temp, camera_k, camera_dist);
-    		image_gray = temp;
-    		cv::Mat temp2;
-    		cv::undistort(image, temp2, camera_k, camera_dist);
-    		image = temp2;
-    	}
-    	else
-    	{
-    		cv::undistort(image, image_gray, camera_k, camera_dist);
-    		cv::Mat temp;
-    		cv::undistort(image, temp, camera_k, camera_dist);
-    		image = temp;
-    	}
+		// convert to grayscale and undistort both images
+		cv::Mat image_gray;
+		if(image.channels() == 3)
+		{
+			cv::cvtColor(image, image_gray, cv::COLOR_RGB2GRAY);
+			cv::Mat temp;
+			cv::undistort(image_gray, temp, camera_k, camera_dist);
+			image_gray = temp;
+			cv::Mat temp2;
+			cv::undistort(image, temp2, camera_k, camera_dist);
+			image = temp2;
+		}
+		else
+		{
+			cv::undistort(image, image_gray, camera_k, camera_dist);
+			cv::Mat temp;
+			cv::undistort(image, temp, camera_k, camera_dist);
+			image = temp;
+		}
 
-    	//TODO: Create a enum with the tag_codes;
+		//set the apriltag family
+		apriltag_family_t *tf = NULL;
+		switch (conf.family)
+		{
+		case TAG25H7:
+			tf = tag25h7_create();
+			break;
+		case TAG25H9:
+			tf = tag25h9_create();
+			break;
+		case TAG36H10:
+			tf = tag36h10_create();
+			break;
+		case TAG36H11:
+			tf = tag36h11_create();
+			break;
+		case TAG36ARTOOLKIT:
+			tf = tag36artoolkit_create();
+			break;
+		default:
+			throw std::runtime_error("The desired apriltag family code is not implemented");
+			break;
+		}
 
-    	//set the apriltag family
-    	apriltag_family_t *tf = NULL;
-    	(tag_code == "36h11") ? tf = tag36h11_create() : throw std::runtime_error("The desired apriltag family code is not implemented");
+		// create a apriltag detector and add the current family
+		apriltag_detector_t *td = apriltag_detector_create();
+		apriltag_detector_add_family(td, tf);
+		td->quad_decimate = conf.decimate;
+		td->quad_sigma = conf.blur;
+		td->nthreads = conf.threads;
+		td->debug = conf.debug;
+		td->refine_edges = conf.refine_edges;
+		td->refine_decode = conf.refine_decode;
+		td->refine_pose = conf.refine_pose;
 
-    	//TODO: Create orogen properties to set all these values.
-    	// create a apriltag detector and add the current family
-    	apriltag_detector_t *td = apriltag_detector_create();
-    	apriltag_detector_add_family(td, tf);
-    	td->quad_decimate = 1.0;
-    	td->quad_sigma = 0.0;
-    	td->nthreads = 4;
-    	td->debug = 0;
-    	td->refine_decode = 0;
-    	td->refine_pose = 0;
+		//Repeat processing on input set this many
+		int maxiters = conf.iters;
+		const int hamm_hist_max = 10;
 
-    	//Repeat processing on input set this many
-    	int maxiters = 1;
-    	const int hamm_hist_max = 10;
+		std::vector<base::Vector2d> corners;
+		//main loop
+		for (int iter = 0; iter < maxiters; iter++)
+		{
+			if (maxiters > 1)
+				printf("iter %d / %d\n", iter + 1, maxiters);
+			int hamm_hist[hamm_hist_max];
+			memset(hamm_hist, 0, sizeof(hamm_hist));
 
-    	std::vector<base::Vector2d> corners;
-    	//main loop
-    	for (int iter = 0; iter < maxiters; iter++)
-    	{
-    		if (maxiters > 1) printf("iter %d / %d\n", iter + 1, maxiters);
-    		int hamm_hist[hamm_hist_max];
-    		memset(hamm_hist, 0, sizeof(hamm_hist));
+            //convert cv::Mat to image_u8_t
+			//copying one row at once
+			image_u8_t *im = image_u8_create(image_gray.cols, image_gray.rows);
+			for(int i=0; i < image_gray.rows; ++i)
+			{
+				int jump = i*im->stride;
+				memcpy(im->buf+jump, image_gray.ptr(i), image_gray.step[0]*image_gray.elemSize());
+			}
 
-    		//convert cv::Mat to image_u8_t
-    		image_u8_t *im = image_u8_create(image_gray.cols, image_gray.rows);
-    		memcpy(im->buf, image_gray.data, image_gray.total()*image_gray.elemSize());
+			//initialize time and detect markers
+			double t0, dt;
+			t0 = tic();
+			zarray_t *detections = apriltag_detector_detect(td, im);
+			dt = tic()-t0;
 
-    		//initialize timer
-    		double t0, dt;
-    		if(_print_time.get()) t0 = tic();
+			//build the rbs_vector and draw detected markers
+			std::vector<base::samples::RigidBodyState> rbs_vector;
+			for (int i = 0; i < zarray_size(detections); i++)
+			{
+				apriltag_detection_t *det;
+				zarray_get(detections, i, &det);
 
-    		//detect markers
-    		zarray_t *detections = apriltag_detector_detect(td, im);
-//    		if (zarray_size(detections)) std::cout << "//////// APRILTAGS /////////" << std::endl;
+				//estimate pose and push_back to rbs_vector
+				base::samples::RigidBodyState rbs;
+				getRbs(rbs, _marker_size.get(), det->p, camera_k, cv::Mat());
+				rbs.sourceFrame = _source_frame.get();
+				rbs.time = current_frame_ptr->time;
+				rbs_vector.push_back(rbs);
 
-            if(_print_time.get()) dt = tic()-t0;
-
-    		//build the rbs_vector and draw detected markers
-    		std::vector<base::samples::RigidBodyState> rbs_vector;
-    		for (int i = 0; i < zarray_size(detections); i++)
-    		{
-    			apriltag_detection_t *det;
-    			zarray_get(detections, i, &det);
-
-    			//estimate pose and push_back to rbs_vector
-    			base::samples::RigidBodyState rbs;
-    			getRbs(rbs, _marker_size.get(), det->p, camera_k, cv::Mat());
-    			rbs.sourceFrame = _source_frame.get();
-    			rbs.time = current_frame_ptr->time;
-    			rbs_vector.push_back(rbs);
-
-    			std::cout << "APRILTAGS ID: " << det->id <<
-    					" x: " << rbs.position.x() <<
+				std::cout << "APRILTAGS ID: " << det->id <<
+						" x: " << rbs.position.x() <<
 						" y: " << rbs.position.y() <<
 						" z: " << rbs.position.z() <<
 						" roll: "  << rbs.getRoll()*180/M_PI  <<
@@ -155,73 +174,95 @@ void Task::updateHook()
 						" yaw: "   << rbs.getYaw()*180/M_PI   <<
 						" extract_time: " << dt*1000 << " ms" << std::endl;
 
-    			for (int i=0; i < 4; ++i)
-    			{
-    				base::Vector2d aux;
-    				aux[0] = det->p[i][0];
+				for (int i=0; i < 4; ++i)
+				{
+					base::Vector2d aux;
+					aux[0] = det->p[i][0];
 					aux[1] = det->p[i][1];
 					corners.push_back(aux);
-    			}
+				}
 
 
-    			if (!_quiet.get())
-    				printf("detection %3d: id (%2dx%2d)-%-4d, hamming %d, goodness %8.3f, margin %8.3f\n",
-    						i, det->family->d*det->family->d, det->family->h, det->id, det->hamming, det->goodness, det->decision_margin);
+				if (!conf.quiet)
+					printf("detection %3d: id (%2dx%2d)-%-4d, hamming %d, goodness %8.3f, margin %8.3f\n",
+							i, det->family->d*det->family->d, det->family->h,
+							det->id, det->hamming, det->goodness, det->decision_margin);
 
-    			if (_draw_image.get())
-    			{
-    				draw(image,det->p, det->c, det->id, cv::Scalar(0,0,255), 2);
-    				draw3dAxis(image, _marker_size.get(), camera_k, cv::Mat());
-    				draw3dCube(image, _marker_size.get(), camera_k, cv::Mat());
-    			}
+				if (_draw_image.get())
+				{
+					draw(image,det->p, det->c, det->id, cv::Scalar(0,0,255), 2);
+					draw3dAxis(image, _marker_size.get(), camera_k, cv::Mat());
+					draw3dCube(image, _marker_size.get(), camera_k, cv::Mat());
+				}
 
-    			hamm_hist[det->hamming]++;
+				hamm_hist[det->hamming]++;
 
-    			apriltag_detection_destroy(det);
-    		}
-//    		if (zarray_size(detections)) std::cout << "////////////////////////////" << std::endl;
-    		zarray_destroy(detections);
+				apriltag_detection_destroy(det);
+			}
+			zarray_destroy(detections);
 
-    		if (!_quiet.get())
-    		{
-    			timeprofile_display(td->tp);
-    			printf("nedges: %d, nsegments: %d, nquads: %d\n", td->nedges, td->nsegments, td->nquads);
-    			printf("Hamming histogram: ");
-    			for (int i = 0; i < hamm_hist_max; i++)
-    				printf("%5d", hamm_hist[i]);
-    			printf("%12.3f", timeprofile_total_utime(td->tp) / 1.0E3);
-    			printf("\n");
-    		}
+			if (!conf.quiet)
+			{
+				timeprofile_display(td->tp);
+				printf("nedges: %d, nsegments: %d, nquads: %d\n", td->nedges, td->nsegments, td->nquads);
+				printf("Hamming histogram: ");
+				for (int i = 0; i < hamm_hist_max; i++)
+					printf("%5d", hamm_hist[i]);
+				printf("%12.3f", timeprofile_total_utime(td->tp) / 1.0E3);
+				printf("\n");
+			}
 
-    		image_u8_destroy(im);
+			image_u8_destroy(im);
 
-    		//write the the image in the output port
-    		if (_draw_image.get())
-    		{
-    			base::samples::frame::Frame *pframe = out_frame_ptr.write_access();
-    			frame_helper::FrameHelper::copyMatToFrame(image,*pframe);
-    			pframe->time = base::Time::now();
-    			out_frame_ptr.reset(pframe);
-    			_output_image.write(out_frame_ptr);
-    		}
+			//write the the image in the output port
+			if (_draw_image.get())
+			{
+				base::samples::frame::Frame *pframe = out_frame_ptr.write_access();
+				frame_helper::FrameHelper::copyMatToFrame(image,*pframe);
+				pframe->time = base::Time::now();
+				out_frame_ptr.reset(pframe);
+				_output_image.write(out_frame_ptr);
+			}
 
-    		//write the markers in the output port
-    		if (rbs_vector.size() != 0)
-    		{
-    			_detected_corners.write(corners);
-    			corners.clear();
-    		}
+			//write the markers in the output port
+			if (rbs_vector.size() != 0)
+			{
+				_detected_corners.write(corners);
+				corners.clear();
+			}
 
-    		//write the markers in the output port
-    		if (rbs_vector.size() != 0)
-    		{
-    			_marker_poses.write(rbs_vector);
-    			rbs_vector.clear();
-    		}
-    	}
-    	apriltag_detector_destroy(td);
-    	tag36h11_destroy(tf);
-    }
+			//write the markers in the output port
+			if (rbs_vector.size() != 0)
+			{
+				_marker_poses.write(rbs_vector);
+				rbs_vector.clear();
+			}
+		}
+
+		apriltag_detector_destroy(td);
+
+		switch (conf.family)
+		{
+		case TAG25H7:
+			tag25h7_destroy(tf);
+			break;
+		case TAG25H9:
+			tag25h9_destroy(tf);
+			break;
+		case TAG36H10:
+			tag36h10_destroy(tf);
+			break;
+		case TAG36H11:
+			tag36h11_destroy(tf);
+			break;
+		case TAG36ARTOOLKIT:
+			tag36artoolkit_destroy(tf);
+			break;
+		default:
+			throw std::runtime_error("The desired apriltag family code is not implemented");
+			break;
+		}
+	}
 }
 
 void Task::errorHook()

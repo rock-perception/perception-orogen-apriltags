@@ -13,20 +13,30 @@ task_context "Task" do
     needs_configuration
 
     #Properties
+    property("conf_param", "apriltags/ApriltagsConfig")
+        .doc 'Configuration parameter for Apriltags detector
+              @param bool debug // Enable debugging output (slow)
+  		      @param bool quiet // Reduce output
+        	  @param family_t family // Tag family to use
+        	                         // TAG25H7, TAG25H9, TAG36H10, 
+        	                         // TAG36H11, TAG36ARTOOLKIT
+        	                         // are possible values.
+        	  @param int border // Set tag family border size
+              @param int iters // Repeat processing on input set this many times
+              @param int threads // Use this many CPU threads
+              @param double decimate // Decimate input image by this factor
+              @param double blur // Apply low-pass blur to input
+              @param bool refine_edges // Spend more time trying to align edges of tags
+              @param bool refine_decode // Spend more time trying to decode tags
+              @param bool refine_pose // Spend more time trying to precisely localize tags'
     property("camera_calibration", "frame_helper/CameraCalibration")
         .doc 'Calibration parameters for the camera, which are used to undistort and are added as attributes to the frames'
     property("marker_size", "double", -1)
         .doc 'Value of the marker in meters'
     property("draw_image", "bool", true)
         .doc 'Write the image on the output_port'
-    property("print_time", "bool", true)
-        .doc 'Print the detection time on the screen'
-    property("tag_code", "/std/string", "36h11")
-        .doc 'Define the type of AprilTag, possible values are: 16h5, 25h7, 25h9, 36h9, 36h11'
     property("source_frame","string","camera_frame")
         .doc 'Name of the source frame'
-    property("quiet", "bool", true)
-	.doc 'Reduces the print output'
      
 
     #Input Ports
