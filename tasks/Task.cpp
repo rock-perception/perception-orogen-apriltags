@@ -234,7 +234,7 @@ void Task::updateHook()
 			//write the markers in the output port
 			if (rbs_vector.size() != 0)
 			{
-				_marker_poses.write(rbs_vector);
+				_marker_poses.write(rbs_vector[0]);
 				rbs_vector.clear();
 			}
 		}
@@ -321,8 +321,14 @@ void Task::getRbs(base::samples::RigidBodyState &rbs, float markerSizeMeters, do
     R = R.t();
     t = -R*tvec;
 
-//    //TODO z_forward
-//    if (_z_forward.get())
+    double temp = t.at<float>(0);
+    t.at<float>(0) = -t.at<float>(2);
+    t.at<float>(2) = t.at<float>(1);
+    t.at<float>(1) = -temp;
+
+    //TODO z_forward
+    //if (_z_forward.get())
+//    if (true)
 //    {
 //    double temp = t.at<float>(0);
 //    t.at<float>(0) = t.at<float>(2);
@@ -339,6 +345,19 @@ void Task::getRbs(base::samples::RigidBodyState &rbs, float markerSizeMeters, do
     base::Matrix3d m;
     cv::cv2eigen(R,m);
     base::Quaterniond quat(m);
+
+    base::Vector3d euler;
+    euler[0] = base::getRoll(quat);
+    euler[1] = base::getPitch(quat);
+    euler[2] = base::getYaw(quat);
+
+    temp = euler[0];
+    euler[0] = -euler[2];
+    euler[2] = euler[1];
+    euler[1] = -(temp + M_PI);
+
+    EulerToQuaternion(euler, quat);
+
     rbs.orientation = quat;
     rbs.position.x() = t.at<float>(0);
     rbs.position.y() = t.at<float>(1);
@@ -453,5 +472,13 @@ double Task::tic()
     struct timeval t;
     gettimeofday(&t, NULL);
     return ((double)t.tv_sec + ((double)t.tv_usec)/1000000.);
+}
+
+void Task::EulerToQuaternion(base::Vector3d &eulerang, base::Orientation &quaternion)
+{
+	quaternion.w() = ( cos(eulerang(0)/2)*cos(eulerang(1)/2)*cos(eulerang(2)/2) ) + ( sin(eulerang(0)/2)*sin(eulerang(1)/2)*sin(eulerang(2)/2) );
+	quaternion.x() = ( sin(eulerang(0)/2)*cos(eulerang(1)/2)*cos(eulerang(2)/2) ) - ( cos(eulerang(0)/2)*sin(eulerang(1)/2)*sin(eulerang(2)/2) );
+	quaternion.y() = ( cos(eulerang(0)/2)*sin(eulerang(1)/2)*cos(eulerang(2)/2) ) + ( sin(eulerang(0)/2)*cos(eulerang(1)/2)*sin(eulerang(2)/2) );
+	quaternion.z() = ( cos(eulerang(0)/2)*cos(eulerang(1)/2)*sin(eulerang(2)/2) ) - ( sin(eulerang(0)/2)*sin(eulerang(1)/2)*cos(eulerang(2)/2) );
 }
 
