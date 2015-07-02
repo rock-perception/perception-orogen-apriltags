@@ -161,7 +161,7 @@ void Task::updateHook()
 				//estimate pose and push_back to rbs_vector
 				base::samples::RigidBodyState rbs;
 				getRbs(rbs, _marker_size.get(), det->p, camera_k, cv::Mat());
-				rbs.sourceFrame = _source_frame.get();
+				rbs.sourceFrame = getMarkerFrameName( det->id);
 				rbs.time = current_frame_ptr->time;
 				rbs_vector.push_back(rbs);
 
@@ -368,14 +368,14 @@ void Task::getRbs(base::samples::RigidBodyState &rbs, float markerSizeMeters, do
 void Task::draw(cv::Mat &in, double p[][2], double c[], int id, cv::Scalar color, int lineWidth)const
 {
 
-    cv::line( in,cv::Point(p[0][0], p[0][1]),cv::Point(p[1][0], p[1][1]),color,lineWidth,cv::LINE_AA);
-    cv::line( in,cv::Point(p[1][0], p[1][1]),cv::Point(p[2][0], p[2][1]),color,lineWidth,cv::LINE_AA);
-    cv::line( in,cv::Point(p[2][0], p[2][1]),cv::Point(p[3][0], p[3][1]),color,lineWidth,cv::LINE_AA);
-    cv::line( in,cv::Point(p[3][0], p[3][1]),cv::Point(p[0][0], p[0][1]),color,lineWidth,cv::LINE_AA);
+    cv::line( in,cv::Point(p[0][0], p[0][1]),cv::Point(p[1][0], p[1][1]),color,lineWidth,8);
+    cv::line( in,cv::Point(p[1][0], p[1][1]),cv::Point(p[2][0], p[2][1]),color,lineWidth,8);
+    cv::line( in,cv::Point(p[2][0], p[2][1]),cv::Point(p[3][0], p[3][1]),color,lineWidth,8);
+    cv::line( in,cv::Point(p[3][0], p[3][1]),cv::Point(p[0][0], p[0][1]),color,lineWidth,8);
 
-    cv::rectangle( in,cv::Point(p[0][0], p[0][1]) - cv::Point(2,2),cv::Point(p[0][0], p[0][1])+cv::Point(2,2),cv::Scalar(0,0,255,255),lineWidth,cv::LINE_AA);
-    cv::rectangle( in,cv::Point(p[1][0], p[1][1]) - cv::Point(2,2),cv::Point(p[1][0], p[1][1])+cv::Point(2,2),cv::Scalar(0,255,0,255),lineWidth,cv::LINE_AA);
-    cv::rectangle( in,cv::Point(p[2][0], p[2][1]) - cv::Point(2,2),cv::Point(p[2][0], p[2][1])+cv::Point(2,2),cv::Scalar(255,0,0,255),lineWidth,cv::LINE_AA);
+    cv::rectangle( in,cv::Point(p[0][0], p[0][1]) - cv::Point(2,2),cv::Point(p[0][0], p[0][1])+cv::Point(2,2),cv::Scalar(0,0,255,255),lineWidth,8);
+    cv::rectangle( in,cv::Point(p[1][0], p[1][1]) - cv::Point(2,2),cv::Point(p[1][0], p[1][1])+cv::Point(2,2),cv::Scalar(0,255,0,255),lineWidth,8);
+    cv::rectangle( in,cv::Point(p[2][0], p[2][1]) - cv::Point(2,2),cv::Point(p[2][0], p[2][1])+cv::Point(2,2),cv::Scalar(255,0,0,255),lineWidth,8);
 
         char cad[100];
         sprintf(cad,"id=%d",id);
@@ -428,13 +428,13 @@ void Task::draw3dCube(cv::Mat &Image,float marker_size,cv::Mat  camMatrix,cv::Ma
 
     //draw lines of different colours
     for (int i=0;i<4;i++)
-        cv::line(Image,imagePoints[i],imagePoints[(i+1)%4],cv::Scalar(0,0,255,255),1,cv::LINE_AA);
+        cv::line(Image,imagePoints[i],imagePoints[(i+1)%4],cv::Scalar(0,0,255,255),1,8);
 
     for (int i=0;i<4;i++)
-        cv::line(Image,imagePoints[i+4],imagePoints[4+(i+1)%4],cv::Scalar(0,0,255,255),1,cv::LINE_AA);
+        cv::line(Image,imagePoints[i+4],imagePoints[4+(i+1)%4],cv::Scalar(0,0,255,255),1,8);
 
     for (int i=0;i<4;i++)
-        cv::line(Image,imagePoints[i],imagePoints[i+4],cv::Scalar(0,0,255,255),1,cv::LINE_AA);
+        cv::line(Image,imagePoints[i],imagePoints[i+4],cv::Scalar(0,0,255,255),1,8);
 
 }
 
@@ -459,9 +459,9 @@ void Task::draw3dAxis(cv::Mat &Image, float marker_size, cv::Mat camera_matrix, 
 
     cv::projectPoints( objectPoints, rvec, tvec, camera_matrix, dist_matrix, imagePoints);
     //draw lines of different colours
-    cv::line(Image,imagePoints[0],imagePoints[1],cv::Scalar(0,0,255,255),1,cv::LINE_AA);
-    cv::line(Image,imagePoints[0],imagePoints[2],cv::Scalar(0,255,0,255),1,cv::LINE_AA);
-    cv::line(Image,imagePoints[0],imagePoints[3],cv::Scalar(255,0,0,255),1,cv::LINE_AA);
+    cv::line(Image,imagePoints[0],imagePoints[1],cv::Scalar(0,0,255,255),1,8);
+    cv::line(Image,imagePoints[0],imagePoints[2],cv::Scalar(0,255,0,255),1,8);
+    cv::line(Image,imagePoints[0],imagePoints[3],cv::Scalar(255,0,0,255),1,8);
     cv::putText(Image,"x", imagePoints[1],cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0,0,255,255),2);
     cv::putText(Image,"y", imagePoints[2],cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0,255,0,255),2);
     cv::putText(Image,"z", imagePoints[3],cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(255,0,0,255),2);
@@ -480,5 +480,13 @@ void Task::EulerToQuaternion(base::Vector3d &eulerang, base::Orientation &quater
 	quaternion.x() = ( sin(eulerang(0)/2)*cos(eulerang(1)/2)*cos(eulerang(2)/2) ) - ( cos(eulerang(0)/2)*sin(eulerang(1)/2)*sin(eulerang(2)/2) );
 	quaternion.y() = ( cos(eulerang(0)/2)*sin(eulerang(1)/2)*cos(eulerang(2)/2) ) + ( sin(eulerang(0)/2)*cos(eulerang(1)/2)*sin(eulerang(2)/2) );
 	quaternion.z() = ( cos(eulerang(0)/2)*cos(eulerang(1)/2)*sin(eulerang(2)/2) ) - ( sin(eulerang(0)/2)*sin(eulerang(1)/2)*cos(eulerang(2)/2) );
+}
+
+std::string Task::getMarkerFrameName(int i){
+    std::stringstream ss;
+    ss << "aruco_id_" << i << "_frame";
+    std::string marker_frame_name = ss.str();
+    
+    return marker_frame_name;
 }
 

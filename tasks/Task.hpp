@@ -59,6 +59,7 @@ namespace apriltags {
     void draw3dCube(cv::Mat &Image,float marker_size,cv::Mat  camMatrix,cv::Mat distCoeff);
     void EulerToQuaternion(base::Vector3d &eulerang, base::Orientation &quaternion);
     double tic();
+    std::string getMarkerFrameName(int i);
 
     public:
         /** TaskContext constructor for Task
