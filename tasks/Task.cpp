@@ -234,7 +234,10 @@ void Task::updateHook()
 			//write the markers in the output port
 			if (rbs_vector.size() != 0)
 			{
+				base::samples::RigidBodyState rbs_marker2cam = rbs_vector[0];
+				rbs_marker2cam.setTransform(  rbs_marker2cam.getTransform().inverse() );
 				_marker_poses.write(rbs_vector[0]);
+				_marker2cam.write( rbs_marker2cam );
 				rbs_vector.clear();
 			}
 		}
