@@ -236,7 +236,14 @@ void Task::updateHook()
 			{
 				base::samples::RigidBodyState rbs_marker2cam = rbs_vector[0];
 				rbs_marker2cam.setTransform(  rbs_marker2cam.getTransform().inverse() );
-				_marker_poses.write(rbs_vector[0]);
+				std::vector<base::samples::RigidBodyState> marker_poses;
+				for(unsigned i = 0; i < rbs_vector.size(); i++)
+                {
+                    base::samples::RigidBodyState marker2cam = rbs_vector[0];
+                    marker2cam.setTransform(  rbs_vector[0].getTransform().inverse() );
+                    marker_poses.push_back(marker2cam);
+                }
+				_marker_poses.write(marker_poses);
 				_marker2cam.write( rbs_marker2cam );
 				rbs_vector.clear();
 			}
