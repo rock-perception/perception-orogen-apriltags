@@ -239,8 +239,8 @@ void Task::updateHook()
 				std::vector<base::samples::RigidBodyState> marker_poses;
 				for(unsigned i = 0; i < rbs_vector.size(); i++)
                 {
-                    base::samples::RigidBodyState marker2cam = rbs_vector[0];
-                    marker2cam.setTransform(  rbs_vector[0].getTransform().inverse() );
+                    base::samples::RigidBodyState marker2cam = rbs_vector[i];
+                    marker2cam.setTransform(  rbs_vector[i].getTransform().inverse() );
                     marker_poses.push_back(marker2cam);
                 }
 				_marker_poses.write(marker_poses);
@@ -497,7 +497,7 @@ void Task::EulerToQuaternion(base::Vector3d &eulerang, base::Orientation &quater
 
 std::string Task::getMarkerFrameName(int i){
     std::stringstream ss;
-    ss << "aruco_id_" << i << "_frame";
+    ss << "apriltag_id_" << i << "_frame";
     std::string marker_frame_name = ss.str();
     
     return marker_frame_name;
