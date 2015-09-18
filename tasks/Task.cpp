@@ -39,6 +39,46 @@ bool Task::configureHook()
 	rvec.create(3,1,CV_32FC1);
 	tvec.create(3,1,CV_32FC1);
 
+	// Initialize the undistortion maps:
+	cv::initUndistortRectifyMap(camera_k, camera_dist, cv::Mat(), camera_k, cv::Size(cal.width, cal.height), CV_16SC2, undist_map1, undist_map2);
+
+	// Initialize April-Detector library:
+	//set the apriltag family
+	tf = NULL;
+	switch (conf.family)
+	{
+	case TAG25H7:
+		tf = tag25h7_create();
+		break;
+	case TAG25H9:
+		tf = tag25h9_create();
+		break;
+	case TAG36H10:
+		tf = tag36h10_create();
+		break;
+	case TAG36H11:
+		tf = tag36h11_create();
+		break;
+	case TAG36ARTOOLKIT:
+		tf = tag36artoolkit_create();
+		break;
+	default:
+		throw std::runtime_error("The desired apriltag family code is not implemented");
+		break;
+	}
+
+	// create a apriltag detector and add the current family
+	td = apriltag_detector_create();
+	apriltag_detector_add_family(td, tf);
+	td->quad_decimate = conf.decimate;
+	td->quad_sigma = conf.blur;
+	td->nthreads = conf.threads;
+	td->debug = conf.debug;
+	td->refine_edges = conf.refine_edges;
+	td->refine_decode = conf.refine_decode;
+	td->refine_pose = conf.refine_pose;
+
+
 	return true;
 }
 bool Task::startHook()
@@ -55,6 +95,7 @@ void Task::updateHook()
 	//main loop for detection in each input frame
 	for(int count=0; _image.read(current_frame_ptr) == RTT::NewData; ++count)
 	{
+		double t0 = tic();
 		//convert base::samples::frame::Frame to grayscale cv::Mat
 		cv::Mat image;
 		base::samples::frame::Frame temp_frame;
@@ -72,57 +113,21 @@ void Task::updateHook()
 		cv::Mat image_gray;
 		if(image.channels() == 3)
 		{
-			cv::cvtColor(image, image_gray, cv::COLOR_RGB2GRAY);
 			cv::Mat temp;
-			cv::undistort(image_gray, temp, camera_k, camera_dist);
-			image_gray = temp;
-			cv::Mat temp2;
-			cv::undistort(image, temp2, camera_k, camera_dist);
-			image = temp2;
+			cv::remap(image, temp, undist_map1, undist_map2, cv::INTER_LINEAR);
+
+			cv::cvtColor(temp, image_gray, cv::COLOR_RGB2GRAY);
+			image = temp;
 		}
 		else
 		{
-			cv::undistort(image, image_gray, camera_k, camera_dist);
-			cv::Mat temp;
-			cv::undistort(image, temp, camera_k, camera_dist);
-			image = temp;
+			cv::remap(image, image_gray, undist_map1, undist_map2, cv::INTER_LINEAR);
+			image = image_gray;
 		}
+		double t1 = tic(), t_undistort=t1-t0; t0=t1;
 
-		//set the apriltag family
-		apriltag_family_t *tf = NULL;
-		switch (conf.family)
-		{
-		case TAG25H7:
-			tf = tag25h7_create();
-			break;
-		case TAG25H9:
-			tf = tag25h9_create();
-			break;
-		case TAG36H10:
-			tf = tag36h10_create();
-			break;
-		case TAG36H11:
-			tf = tag36h11_create();
-			break;
-		case TAG36ARTOOLKIT:
-			tf = tag36artoolkit_create();
-			break;
-		default:
-			throw std::runtime_error("The desired apriltag family code is not implemented");
-			break;
-		}
 
-		// create a apriltag detector and add the current family
-		apriltag_detector_t *td = apriltag_detector_create();
-		apriltag_detector_add_family(td, tf);
-		td->quad_decimate = conf.decimate;
-		td->quad_sigma = conf.blur;
-		td->nthreads = conf.threads;
-		td->debug = conf.debug;
-		td->refine_edges = conf.refine_edges;
-		td->refine_decode = conf.refine_decode;
-		td->refine_pose = conf.refine_pose;
-
+		// FIXME what is the use of this?
 		//Repeat processing on input set this many
 		int maxiters = conf.iters;
 		const int hamm_hist_max = 10;
@@ -144,12 +149,12 @@ void Task::updateHook()
 				int jump = i*im->stride;
 				memcpy(im->buf+jump, image_gray.ptr(i), image_gray.step[0]*image_gray.elemSize());
 			}
+			double t1 = tic(), t_prepare=t1-t0;
 
 			//initialize time and detect markers
-			double t0, dt;
-			t0 = tic();
 			zarray_t *detections = apriltag_detector_detect(td, im);
-			dt = tic()-t0;
+			double t2=tic();
+			double t_detect = t2-t1; t1=t2;
 
 			//build the rbs_vector and draw detected markers
 			std::vector<base::samples::RigidBodyState> rbs_vector;
@@ -172,13 +177,16 @@ void Task::updateHook()
 						" roll: "  << rbs.getRoll()*180/M_PI  <<
 						" pitch: " << rbs.getPitch()*180/M_PI <<
 						" yaw: "   << rbs.getYaw()*180/M_PI   <<
-						" extract_time: " << dt*1000 << " ms" << std::endl;
+						" undistort_time: " << t_undistort*1000 << " ms " <<
+						" prepare_time: " << t_prepare*1000 << " ms" <<
+						" extract_time: " << t_detect*1000 << " ms" <<
+						std::endl;
 
-				for (int i=0; i < 4; ++i)
+				for (int j=0; j < 4; ++j)
 				{
 					base::Vector2d aux;
-					aux[0] = det->p[i][0];
-					aux[1] = det->p[i][1];
+					aux[0] = det->p[j][0];
+					aux[1] = det->p[j][1];
 					corners.push_back(aux);
 				}
 
@@ -248,30 +256,6 @@ void Task::updateHook()
 				rbs_vector.clear();
 			}
 		}
-
-		apriltag_detector_destroy(td);
-
-		switch (conf.family)
-		{
-		case TAG25H7:
-			tag25h7_destroy(tf);
-			break;
-		case TAG25H9:
-			tag25h9_destroy(tf);
-			break;
-		case TAG36H10:
-			tag36h10_destroy(tf);
-			break;
-		case TAG36H11:
-			tag36h11_destroy(tf);
-			break;
-		case TAG36ARTOOLKIT:
-			tag36artoolkit_destroy(tf);
-			break;
-		default:
-			throw std::runtime_error("The desired apriltag family code is not implemented");
-			break;
-		}
 	}
 }
 
@@ -285,6 +269,31 @@ void Task::stopHook()
 }
 void Task::cleanupHook()
 {
+	// clean-up AprilTag detector:
+	apriltag_detector_destroy(td);
+
+	switch (conf.family)
+	{
+	case TAG25H7:
+		tag25h7_destroy(tf);
+		break;
+	case TAG25H9:
+		tag25h9_destroy(tf);
+		break;
+	case TAG36H10:
+		tag36h10_destroy(tf);
+		break;
+	case TAG36H11:
+		tag36h11_destroy(tf);
+		break;
+	case TAG36ARTOOLKIT:
+		tag36artoolkit_destroy(tf);
+		break;
+	default:
+		throw std::runtime_error("The desired apriltag family code is not implemented");
+		break;
+	}
+
     TaskBase::cleanupHook();
 }
 

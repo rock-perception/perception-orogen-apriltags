@@ -47,9 +47,14 @@ namespace apriltags {
     protected:
 
     apriltags::ApriltagsConfig conf;
+    apriltag_family_t *tf;
+    apriltag_detector_t *td;
 
     cv::Mat camera_k, camera_dist;
     cv::Mat rvec, tvec;
+    // Maps for faster undistortion:
+    cv::Mat undist_map1, undist_map2;
+
 
     RTT::extras::ReadOnlyPointer<base::samples::frame::Frame> out_frame_ptr;
 
