@@ -35,8 +35,6 @@ task_context "Task" do
         .doc 'Value of the marker in meters'
     property("draw_image", "bool", true)
         .doc 'Write the image on the output_port'
-    property("source_frame","string","camera_frame")
-        .doc 'Name of the source frame'
      
 
     #Input Ports
@@ -46,10 +44,10 @@ task_context "Task" do
     #Output Ports
     output_port("output_image", ro_ptr("/base/samples/frame/Frame"))
         .doc 'Image that shows the detected markers'
-#    output_port("marker_poses", "std/vector<base::samples::RigidBodyState>")
-#        .doc 'It contains the calculated marker poses in respect to camera frame of all visible markers'
-    output_port("marker_poses", "base::samples::RigidBodyState")
+    output_port("marker_poses", "std/vector<base::samples::RigidBodyState>")
         .doc 'It contains the calculated marker poses in respect to camera frame of all visible markers'
+    output_port("single_marker_pose", "base::samples::RigidBodyState")
+	.doc 'It contains a single calculated marker pose in respect to camera of a deteted visable marker'
     output_port("detected_corners", "std/vector<base::Vector2d>")
      	.doc 'Writes the camera calibration to be acessible to other components' 	
      	

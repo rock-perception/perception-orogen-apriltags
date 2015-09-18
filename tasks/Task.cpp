@@ -161,7 +161,7 @@ void Task::updateHook()
 				//estimate pose and push_back to rbs_vector
 				base::samples::RigidBodyState rbs;
 				getRbs(rbs, _marker_size.get(), det->p, camera_k, cv::Mat());
-				rbs.sourceFrame = _source_frame.get();
+				rbs.sourceFrame = getMarkerFrameName( det->id);
 				rbs.time = current_frame_ptr->time;
 				rbs_vector.push_back(rbs);
 
@@ -234,7 +234,17 @@ void Task::updateHook()
 			//write the markers in the output port
 			if (rbs_vector.size() != 0)
 			{
-				_marker_poses.write(rbs_vector[0]);
+				base::samples::RigidBodyState rbs_marker2cam = rbs_vector[0];
+				rbs_marker2cam.setTransform(  rbs_marker2cam.getTransform().inverse() );
+				std::vector<base::samples::RigidBodyState> marker_poses;
+				for(unsigned i = 0; i < rbs_vector.size(); i++)
+				{
+				    base::samples::RigidBodyState marker2cam = rbs_vector[i];
+				    marker2cam.setTransform(  rbs_vector[i].getTransform().inverse() );
+				    marker_poses.push_back(marker2cam);
+				}
+				_marker_poses.write(marker_poses);
+				_single_marker_pose.write( rbs_marker2cam );
 				rbs_vector.clear();
 			}
 		}
@@ -377,6 +387,7 @@ void Task::draw(cv::Mat &in, double p[][2], double c[], int id, cv::Scalar color
     cv::rectangle( in,cv::Point(p[1][0], p[1][1]) - cv::Point(2,2),cv::Point(p[1][0], p[1][1])+cv::Point(2,2),cv::Scalar(0,255,0,255),lineWidth,CV_AA);
     cv::rectangle( in,cv::Point(p[2][0], p[2][1]) - cv::Point(2,2),cv::Point(p[2][0], p[2][1])+cv::Point(2,2),cv::Scalar(255,0,0,255),lineWidth,CV_AA);
 
+
         char cad[100];
         sprintf(cad,"id=%d",id);
         //determine the centroid
@@ -436,6 +447,7 @@ void Task::draw3dCube(cv::Mat &Image,float marker_size,cv::Mat  camMatrix,cv::Ma
     for (int i=0;i<4;i++)
         cv::line(Image,imagePoints[i],imagePoints[i+4],cv::Scalar(0,0,255,255),1,CV_AA);
 
+
 }
 
 void Task::draw3dAxis(cv::Mat &Image, float marker_size, cv::Mat camera_matrix, cv::Mat dist_matrix)
@@ -459,6 +471,7 @@ void Task::draw3dAxis(cv::Mat &Image, float marker_size, cv::Mat camera_matrix, 
 
     cv::projectPoints( objectPoints, rvec, tvec, camera_matrix, dist_matrix, imagePoints);
     //draw lines of different colours
+
     cv::line(Image,imagePoints[0],imagePoints[1],cv::Scalar(0,0,255,255),1,CV_AA);
     cv::line(Image,imagePoints[0],imagePoints[2],cv::Scalar(0,255,0,255),1,CV_AA);
     cv::line(Image,imagePoints[0],imagePoints[3],cv::Scalar(255,0,0,255),1,CV_AA);
@@ -480,5 +493,13 @@ void Task::EulerToQuaternion(base::Vector3d &eulerang, base::Orientation &quater
 	quaternion.x() = ( sin(eulerang(0)/2)*cos(eulerang(1)/2)*cos(eulerang(2)/2) ) - ( cos(eulerang(0)/2)*sin(eulerang(1)/2)*sin(eulerang(2)/2) );
 	quaternion.y() = ( cos(eulerang(0)/2)*sin(eulerang(1)/2)*cos(eulerang(2)/2) ) + ( sin(eulerang(0)/2)*cos(eulerang(1)/2)*sin(eulerang(2)/2) );
 	quaternion.z() = ( cos(eulerang(0)/2)*cos(eulerang(1)/2)*sin(eulerang(2)/2) ) - ( sin(eulerang(0)/2)*sin(eulerang(1)/2)*cos(eulerang(2)/2) );
+}
+
+std::string Task::getMarkerFrameName(int i){
+    std::stringstream ss;
+    ss << "apriltag_id_" << i << "_frame";
+    std::string marker_frame_name = ss.str();
+    
+    return marker_frame_name;
 }
 
