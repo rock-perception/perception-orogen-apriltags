@@ -328,22 +328,21 @@ void Task::getRbs(base::samples::RigidBodyState &rbs, float markerSizeMeters, do
         ImagePoints.at<float>(c,1)=points[c][1];
     }
 
+    // solvePnP calculates marker2camera transformation
     cv::Mat raux,taux;
     cv::solvePnP(ObjPoints, ImagePoints, camMatrix, distCoeff,raux,taux);
 
     raux.convertTo(rvec,CV_32F);
     taux.convertTo(tvec,CV_32F);
 
-    cv::Mat R,t;
+    cv::Mat_<float> R,t;
     cv::Rodrigues(rvec,R);
 
-    R = R.t();
-    t = -R*tvec;
-
-    double temp = t.at<float>(0);
-    t.at<float>(0) = -t.at<float>(2);
-    t.at<float>(2) = t.at<float>(1);
-    t.at<float>(1) = -temp;
+    if(false) { // enable this if you want camera2marker
+        R = R.t();
+        t = -R*tvec;
+    }
+    else t=tvec;
 
     //TODO z_forward
     //if (_z_forward.get())
@@ -365,6 +364,11 @@ void Task::getRbs(base::samples::RigidBodyState &rbs, float markerSizeMeters, do
     cv::cv2eigen(R,m);
     base::Quaterniond quat(m);
 
+  if(false) { // disabled axis permutations
+    double temp = t.at<float>(0);
+    t.at<float>(0) = -t.at<float>(2);
+    t.at<float>(2) = t.at<float>(1);
+    t.at<float>(1) = -temp;
     base::Vector3d euler;
     euler[0] = base::getRoll(quat);
     euler[1] = base::getPitch(quat);
@@ -376,6 +380,7 @@ void Task::getRbs(base::samples::RigidBodyState &rbs, float markerSizeMeters, do
     euler[1] = -(temp + M_PI);
 
     EulerToQuaternion(euler, quat);
+  }
 
     rbs.orientation = quat;
     rbs.position.x() = t.at<float>(0);
