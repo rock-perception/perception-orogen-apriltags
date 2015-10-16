@@ -347,9 +347,9 @@ void Task::getRbs(base::samples::RigidBodyState &rbs, float markerSizeMeters, do
 
 
     rbs.orientation = quat;
-    rbs.position.x() = t.at<float>(0);
-    rbs.position.y() = t.at<float>(1);
-    rbs.position.z() = t.at<float>(2);
+    rbs.position.x() = t(0);
+    rbs.position.y() = t(1);
+    rbs.position.z() = t(2);
 
 }
 
