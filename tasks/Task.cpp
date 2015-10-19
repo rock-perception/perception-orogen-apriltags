@@ -36,8 +36,8 @@ bool Task::configureHook()
 	// setting immutable parameters
 	conf = _conf_param.get();
 
-	rvec.create(3,1,CV_32FC1);
-	tvec.create(3,1,CV_32FC1);
+	rvec.create(3,1,CV_64FC1);
+	tvec.create(3,1,CV_64FC1);
 
 	// Initialize the undistortion maps:
 	cv::initUndistortRectifyMap(camera_k, camera_dist, cv::Mat(), camera_k, cv::Size(cal.width, cal.height), CV_16SC2, undist_map1, undist_map2);
@@ -242,17 +242,8 @@ void Task::updateHook()
 			//write the markers in the output port
 			if (rbs_vector.size() != 0)
 			{
-				base::samples::RigidBodyState rbs_marker2cam = rbs_vector[0];
-				rbs_marker2cam.setTransform(  rbs_marker2cam.getTransform().inverse() );
-				std::vector<base::samples::RigidBodyState> marker_poses;
-				for(unsigned i = 0; i < rbs_vector.size(); i++)
-				{
-				    base::samples::RigidBodyState marker2cam = rbs_vector[i];
-				    marker2cam.setTransform(  rbs_vector[i].getTransform().inverse() );
-				    marker_poses.push_back(marker2cam);
-				}
-				_marker_poses.write(marker_poses);
-				_single_marker_pose.write( rbs_marker2cam );
+				_marker_poses.write(rbs_vector);
+				_single_marker_pose.write( rbs_vector[0] );
 				rbs_vector.clear();
 			}
 		}
@@ -305,82 +296,51 @@ void Task::getRbs(base::samples::RigidBodyState &rbs, float markerSizeMeters, do
     double halfSize=markerSizeMeters/2.;
 
     //set objects points clockwise starting from (-1,+1,0)
-    cv::Mat ObjPoints(4,3,CV_32FC1);
-    ObjPoints.at<float>(0,0)=-halfSize;
-    ObjPoints.at<float>(0,1)=+halfSize;
-    ObjPoints.at<float>(0,2)=0;
-    ObjPoints.at<float>(1,0)=+halfSize;
-    ObjPoints.at<float>(1,1)=+halfSize;
-    ObjPoints.at<float>(1,2)=0;
-    ObjPoints.at<float>(2,0)=+halfSize;
-    ObjPoints.at<float>(2,1)=-halfSize;
-    ObjPoints.at<float>(2,2)=0;
-    ObjPoints.at<float>(3,0)=-halfSize;
-    ObjPoints.at<float>(3,1)=-halfSize;
-    ObjPoints.at<float>(3,2)=0;
+    // this makes the z-axis point out of the marker
+    cv::Mat_<double> ObjPoints(4,3);
+    ObjPoints(0,0)=-halfSize;
+    ObjPoints(0,1)=+halfSize;
+    ObjPoints(0,2)=0;
+    ObjPoints(1,0)=+halfSize;
+    ObjPoints(1,1)=+halfSize;
+    ObjPoints(1,2)=0;
+    ObjPoints(2,0)=+halfSize;
+    ObjPoints(2,1)=-halfSize;
+    ObjPoints(2,2)=0;
+    ObjPoints(3,0)=-halfSize;
+    ObjPoints(3,1)=-halfSize;
+    ObjPoints(3,2)=0;
 
 
     //set image points from the detected points
-    cv::Mat ImagePoints(4,2,CV_32FC1);
+    cv::Mat_<double> ImagePoints(4,2);
     for (int c=0;c<4;c++)
     {
-        ImagePoints.at<float>(c,0)=points[c][0];
-        ImagePoints.at<float>(c,1)=points[c][1];
+        ImagePoints(c,0)=points[c][0];
+        ImagePoints(c,1)=points[c][1];
     }
 
+    // solvePnP calculates marker2camera transformation
     cv::Mat raux,taux;
     cv::solvePnP(ObjPoints, ImagePoints, camMatrix, distCoeff,raux,taux);
 
-    raux.convertTo(rvec,CV_32F);
-    taux.convertTo(tvec,CV_32F);
+    raux.convertTo(rvec,CV_64F);
+    taux.convertTo(tvec,CV_64F);
 
-    cv::Mat R,t;
+    cv::Mat_<double> R,t;
     cv::Rodrigues(rvec,R);
 
-    R = R.t();
-    t = -R*tvec;
-
-    double temp = t.at<float>(0);
-    t.at<float>(0) = -t.at<float>(2);
-    t.at<float>(2) = t.at<float>(1);
-    t.at<float>(1) = -temp;
-
-    //TODO z_forward
-    //if (_z_forward.get())
-//    if (true)
-//    {
-//    double temp = t.at<float>(0);
-//    t.at<float>(0) = t.at<float>(2);
-//    t.at<float>(2) = -t.at<float>(1);
-//    t.at<float>(1) = -temp;
-//    cv::Mat rvec2(3,1,CV_64FC1);
-//    rvec2.at<float>(0) = rvec.at<float>(2);
-//    rvec2.at<float>(2) = -rvec.at<float>(1);
-//    rvec2.at<float>(1) = -rvec.at<float>(0);
-//    cv::Rodrigues(rvec2,R);
-//    R = R.t();
-//    }
+    t=tvec;
 
     base::Matrix3d m;
     cv::cv2eigen(R,m);
     base::Quaterniond quat(m);
 
-    base::Vector3d euler;
-    euler[0] = base::getRoll(quat);
-    euler[1] = base::getPitch(quat);
-    euler[2] = base::getYaw(quat);
-
-    temp = euler[0];
-    euler[0] = -euler[2];
-    euler[2] = euler[1];
-    euler[1] = -(temp + M_PI);
-
-    EulerToQuaternion(euler, quat);
 
     rbs.orientation = quat;
-    rbs.position.x() = t.at<float>(0);
-    rbs.position.y() = t.at<float>(1);
-    rbs.position.z() = t.at<float>(2);
+    rbs.position.x() = t(0);
+    rbs.position.y() = t(1);
+    rbs.position.z() = t(2);
 
 }
 
@@ -494,14 +454,6 @@ double Task::tic()
     struct timeval t;
     gettimeofday(&t, NULL);
     return ((double)t.tv_sec + ((double)t.tv_usec)/1000000.);
-}
-
-void Task::EulerToQuaternion(base::Vector3d &eulerang, base::Orientation &quaternion)
-{
-	quaternion.w() = ( cos(eulerang(0)/2)*cos(eulerang(1)/2)*cos(eulerang(2)/2) ) + ( sin(eulerang(0)/2)*sin(eulerang(1)/2)*sin(eulerang(2)/2) );
-	quaternion.x() = ( sin(eulerang(0)/2)*cos(eulerang(1)/2)*cos(eulerang(2)/2) ) - ( cos(eulerang(0)/2)*sin(eulerang(1)/2)*sin(eulerang(2)/2) );
-	quaternion.y() = ( cos(eulerang(0)/2)*sin(eulerang(1)/2)*cos(eulerang(2)/2) ) + ( sin(eulerang(0)/2)*cos(eulerang(1)/2)*sin(eulerang(2)/2) );
-	quaternion.z() = ( cos(eulerang(0)/2)*cos(eulerang(1)/2)*sin(eulerang(2)/2) ) - ( sin(eulerang(0)/2)*sin(eulerang(1)/2)*cos(eulerang(2)/2) );
 }
 
 std::string Task::getMarkerFrameName(int i){
