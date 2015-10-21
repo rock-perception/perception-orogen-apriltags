@@ -35,6 +35,8 @@ task_context "Task" do
         .doc 'Value of the marker in meters'
     property("draw_image", "bool", true)
         .doc 'Write the image on the output_port'
+    property("scale_image", "double", 1.0)
+        .doc 'applies this scaling to the image and calibration parameters'
      
 
     #Input Ports
