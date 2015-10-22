@@ -54,6 +54,7 @@ namespace apriltags {
     cv::Mat rvec, tvec;
     // Maps for faster undistortion:
     cv::Mat undist_map1, undist_map2;
+    double scaling;
 
 
     RTT::extras::ReadOnlyPointer<base::samples::frame::Frame> out_frame_ptr;

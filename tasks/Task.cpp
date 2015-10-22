@@ -30,7 +30,24 @@ bool Task::configureHook()
 
 	// setting camera matrix and distortion matrix
 	frame_helper::CameraCalibration cal = _camera_calibration.get();
-	camera_k = (cv::Mat_<double>(3,3) << cal.fx, 0, cal.cx, 0, cal.fy, cal.cy, 0, 0, 1);
+
+        // apply scaling to calibration parameters
+        scaling = 1.0;
+        if(_scale_image.value() > 0.0 && _scale_image.value() != 1.0)
+            scaling = _scale_image.value();
+        if(scaling != 1.0)
+        {
+            cal.fx = scaling * cal.fx;
+            cal.fy = scaling * cal.fy;
+            cal.cx = scaling * cal.cx;
+            cal.cy = scaling * cal.cy;
+            cal.height = scaling * cal.height;
+            cal.width = scaling * cal.width;
+        }
+
+	camera_k = (cv::Mat_<double>(3,3) << cal.fx, 0, cal.cx,
+                                            0, cal.fy, cal.cy,
+                                            0, 0, 1);
 	camera_dist = (cv::Mat_<double>(1,4) << cal.d0, cal.d1, cal.d2, cal.d3);
 
 	// setting immutable parameters
@@ -109,6 +126,14 @@ void Task::updateHook()
 		else
 			image = frame_helper::FrameHelper::convertToCvMat(*current_frame_ptr);
 
+                // scale image size
+                if(scaling != 1.0)
+                {
+                    cv::Mat image_scaled;
+                    cv::resize(image, image_scaled, cv::Size(), scaling, scaling);
+                    image = image_scaled;
+                }
+
 		// convert to grayscale and undistort both images
 		cv::Mat image_gray;
 		if(image.channels() == 3)
@@ -125,7 +150,6 @@ void Task::updateHook()
 			image = image_gray;
 		}
 		double t1 = tic(), t_undistort=t1-t0; t0=t1;
-
 
 		// FIXME what is the use of this?
 		//Repeat processing on input set this many
