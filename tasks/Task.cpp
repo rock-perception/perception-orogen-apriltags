@@ -78,7 +78,17 @@ bool Task::configureHook()
 	td->refine_decode = conf.refine_decode;
 	td->refine_pose = conf.refine_pose;
 
-
+	std::vector<ApriltagIDToSize> apriltag_size_id = _apriltag_id_to_size.get();
+	apriltag_id_to_size_.clear();
+	
+	//Initialize the id2size mapping
+	for(std::vector<ApriltagIDToSize>::iterator it = apriltag_size_id.begin(); it != apriltag_size_id.end(); it++){
+	
+	  apriltag_id_to_size_[ it->id] = it->marker_size;
+	  
+	}
+	
+	
 	return true;
 }
 bool Task::startHook()
@@ -162,10 +172,20 @@ void Task::updateHook()
 			{
 				apriltag_detection_t *det;
 				zarray_get(detections, i, &det);
+				
+				double size;
+				
+				if( apriltag_id_to_size_.find( det->id) != apriltag_id_to_size_.end())
+				{
+				  size = apriltag_id_to_size_[ det->id];
+				}
+				else{
+				  size = _marker_size.get();
+				}
 
 				//estimate pose and push_back to rbs_vector
 				base::samples::RigidBodyState rbs;
-				getRbs(rbs, _marker_size.get(), det->p, camera_k, cv::Mat());
+				getRbs(rbs, size, det->p, camera_k, cv::Mat());
 				rbs.sourceFrame = getMarkerFrameName( det->id);
 				rbs.time = current_frame_ptr->time;
 				rbs_vector.push_back(rbs);
@@ -199,8 +219,8 @@ void Task::updateHook()
 				if (_draw_image.get())
 				{
 					draw(image,det->p, det->c, det->id, cv::Scalar(0,0,255), 2);
-					draw3dAxis(image, _marker_size.get(), camera_k, cv::Mat());
-					draw3dCube(image, _marker_size.get(), camera_k, cv::Mat());
+					draw3dAxis(image, size, camera_k, cv::Mat());
+					draw3dCube(image, size, camera_k, cv::Mat());
 				}
 
 				hamm_hist[det->hamming]++;

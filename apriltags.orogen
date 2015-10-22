@@ -33,6 +33,9 @@ task_context "Task" do
         .doc 'Calibration parameters for the camera, which are used to undistort and are added as attributes to the frames'
     property("marker_size", "double", -1)
         .doc 'Value of the marker in meters'
+    property("apriltag_id_to_size", "/std/vector<apriltags/ApriltagIDToSize>").
+	doc("Mapping from Apriltag-ID to marker size. This could be used, if there are multiple marker with different sizes to be detected").
+	doc("This property is OPTIONAL. If not set, the marker_size-property is used")
     property("draw_image", "bool", true)
         .doc 'Write the image on the output_port'
      
