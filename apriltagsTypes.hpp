@@ -41,6 +41,12 @@ namespace apriltags {
         bool refine_decode; // Spend more time trying to decode tags
         bool refine_pose; // Spend more time trying to precisely localize tags
 	};
+	
+   struct ApriltagIDToSize
+   {
+      int id;
+      double marker_size; //in meters  
+   };
 
 }
 
