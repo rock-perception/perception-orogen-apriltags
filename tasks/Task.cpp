@@ -82,7 +82,8 @@ bool Task::configureHook()
 	apriltag_id_to_size_.clear();
 	
 	//Initialize the id2size mapping
-	for(std::vector<ApriltagIDToSize>::iterator it = apriltag_size_id.begin(); it != apriltag_size_id.end(); it++){
+	for(std::vector<ApriltagIDToSize>::iterator it = apriltag_size_id.begin(); it != apriltag_size_id.end(); it++)
+	{
 	
 	  apriltag_id_to_size_[ it->id] = it->marker_size;
 	  
@@ -179,7 +180,8 @@ void Task::updateHook()
 				{
 				  size = apriltag_id_to_size_[ det->id];
 				}
-				else{
+				else
+				{
 				  size = _marker_size.get();
 				}
 
@@ -476,7 +478,8 @@ double Task::tic()
     return ((double)t.tv_sec + ((double)t.tv_usec)/1000000.);
 }
 
-std::string Task::getMarkerFrameName(int i){
+std::string Task::getMarkerFrameName(int i)
+{
     std::stringstream ss;
     ss << "apriltag_id_" << i << "_frame";
     std::string marker_frame_name = ss.str();
