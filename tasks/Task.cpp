@@ -92,6 +92,8 @@ void Task::updateHook()
 	TaskBase::updateHook();
 
 	RTT::extras::ReadOnlyPointer<base::samples::frame::Frame> current_frame_ptr;
+	frame_helper::FrameHelper frameHelper;
+	base::samples::frame::Frame current_frame;
 	//main loop for detection in each input frame
 	for(int count=0; _image.read(current_frame_ptr) == RTT::NewData; ++count)
 	{
@@ -100,14 +102,11 @@ void Task::updateHook()
 		cv::Mat image;
 		base::samples::frame::Frame temp_frame;
 
-		if (current_frame_ptr->isBayer())
-		{
-			frame_helper::FrameHelper::convertBayerToRGB24(*current_frame_ptr, temp_frame);
-			image = frame_helper::FrameHelper::convertToCvMat(temp_frame);
-			cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
-		}
-		else
-			image = frame_helper::FrameHelper::convertToCvMat(*current_frame_ptr);
+		// convert arbitrary input to BGR frame.
+		// TODO for better performance this could be directly converted to MODE_GRAYSCALE, especially if out_frame is not connected
+		current_frame.init( current_frame_ptr->size.width, current_frame_ptr->size.height, 8, base::samples::frame::MODE_BGR );
+		frameHelper.convert( *current_frame_ptr, current_frame, 0, 0, frame_helper::INTER_LINEAR, false);
+		image = frame_helper::FrameHelper::convertToCvMat(current_frame);
 
 		// convert to grayscale and undistort both images
 		cv::Mat image_gray;
@@ -115,14 +114,13 @@ void Task::updateHook()
 		{
 			cv::Mat temp;
 			cv::remap(image, temp, undist_map1, undist_map2, cv::INTER_LINEAR);
-
-			cv::cvtColor(temp, image_gray, cv::COLOR_RGB2GRAY);
+			cv::cvtColor(temp, image_gray, cv::COLOR_BGR2GRAY);
 			image = temp;
 		}
 		else
 		{
 			cv::remap(image, image_gray, undist_map1, undist_map2, cv::INTER_LINEAR);
-			image = image_gray;
+			cv::cvtColor(image_gray, image,  cv::COLOR_GRAY2BGR);
 		}
 		double t1 = tic(), t_undistort=t1-t0; t0=t1;
 
