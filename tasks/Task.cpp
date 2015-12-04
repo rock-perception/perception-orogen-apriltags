@@ -211,6 +211,7 @@ void Task::updateHook()
 				base::samples::RigidBodyState rbs;
 				getRbs(rbs, size, det->p, camera_k, cv::Mat());
 				rbs.sourceFrame = getMarkerFrameName( det->id);
+                                rbs.targetFrame = _camera_frame_name.value();
 				rbs.time = current_frame_ptr->time;
 				rbs_vector.push_back(rbs);
 
