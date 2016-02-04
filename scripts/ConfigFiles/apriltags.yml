@@ -44,12 +44,6 @@ conf_param:
 draw_image: true
 # Value of the marker in meters
 marker_size: -1
-# no documentation available for this property
-metadata:
-  metadata: []
-  properties: []
-  input_ports: []
-  output_ports: []
 # Name of the source frame
 source_frame: camera_frame
 
