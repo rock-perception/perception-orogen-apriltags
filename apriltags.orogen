@@ -58,6 +58,7 @@ task_context "Task" do
     output_port("detected_corners", "std/vector<base::Vector2d>")
      	.doc 'Writes the camera calibration to be acessible to other components' 	
      	
+    runtime_states :MARKER_DETECTED, :NO_MARKER_DETECTED
 
     port_driven "image"
 end
