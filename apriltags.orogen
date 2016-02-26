@@ -29,6 +29,8 @@ task_context "Task" do
               @param bool refine_edges // Spend more time trying to align edges of tags
               @param bool refine_decode // Spend more time trying to decode tags
               @param bool refine_pose // Spend more time trying to precisely localize tags'
+    property("pose_calculation", "bool", true)
+        .doc 'If false, the marker is detected but the pose is not calculated'
     property("camera_calibration", "frame_helper/CameraCalibration")
         .doc 'Calibration parameters for the camera, which are used to undistort and are added as attributes to the frames'
     property("marker_size", "double", -1)

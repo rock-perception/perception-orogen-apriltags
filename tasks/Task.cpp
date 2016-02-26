@@ -216,25 +216,30 @@ void Task::updateHook()
 				  size = _marker_size.get();
 				}
 
-				//estimate pose and push_back to rbs_vector
-				base::samples::RigidBodyState rbs;
-				getRbs(rbs, size, det->p, camera_k, cv::Mat());
-				rbs.sourceFrame = getMarkerFrameName( det->id);
-                                rbs.targetFrame = _camera_frame_name.value();
-				rbs.time = current_frame_ptr->time;
-				rbs_vector.push_back(rbs);
+				//Compute pose
+                if(_pose_calculation.get())
+                {
+                    base::samples::RigidBodyState rbs;
+                    getRbs(rbs, size, det->p, camera_k, cv::Mat());
 
-				std::cout << "APRILTAGS ID: " << det->id <<
-						" x: " << rbs.position.x() <<
-						" y: " << rbs.position.y() <<
-						" z: " << rbs.position.z() <<
-						" roll: "  << rbs.getRoll()*180/M_PI  <<
-						" pitch: " << rbs.getPitch()*180/M_PI <<
-						" yaw: "   << rbs.getYaw()*180/M_PI   <<
-						" undistort_time: " << t_undistort*1000 << " ms " <<
-						" prepare_time: " << t_prepare*1000 << " ms" <<
-						" extract_time: " << t_detect*1000 << " ms" <<
-						std::endl;
+                    //set the camera frame as the reference frame
+                    rbs.sourceFrame = getMarkerFrameName(det->id);
+                    rbs.targetFrame = _camera_frame.value();
+                    rbs.time = current_frame_ptr->time;
+                    rbs_vector.push_back(rbs);
+
+                    std::cout << "APRILTAGS ID: " << det->id <<
+                        " x: " << rbs.position.x() <<
+                        " y: " << rbs.position.y() <<
+                        " z: " << rbs.position.z() <<
+                        " roll: "  << rbs.getRoll()*180/M_PI  <<
+                        " pitch: " << rbs.getPitch()*180/M_PI <<
+                        " yaw: "   << rbs.getYaw()*180/M_PI   <<
+                        " undistort_time: " << t_undistort*1000 << " ms " <<
+                        " prepare_time: " << t_prepare*1000 << " ms" <<
+                        " extract_time: " << t_detect*1000 << " ms" <<
+                        std::endl;
+                }        
 
 				for (int j=0; j < 4; ++j)
 				{
@@ -261,7 +266,6 @@ void Task::updateHook()
 
 				apriltag_detection_destroy(det);
 			}
-			zarray_destroy(detections);
 
 			if (!conf.quiet)
 			{
@@ -286,8 +290,8 @@ void Task::updateHook()
 				_output_image.write(out_frame_ptr);
 			}
 
-			//write the markers in the output port
-			if (rbs_vector.size() != 0)
+			//write the corners in the output port
+			if (zarray_size(detections) != 0)
 			{
 				_detected_corners.write(corners);
 				corners.clear();
@@ -300,6 +304,7 @@ void Task::updateHook()
 				_single_marker_pose.write( rbs_vector[0] );
 				rbs_vector.clear();
 			}
+			zarray_destroy(detections);
 		}
 	}
 }
@@ -374,7 +379,7 @@ void Task::getRbs(base::samples::RigidBodyState &rbs, float markerSizeMeters, do
         ImagePoints(c,1)=points[c][1];
     }
 
-    // solvePnP calculates marker2camera transformation
+    // solvePnP calculates the marker transformation wrt the camera frame
     cv::Mat raux,taux;
     cv::solvePnP(ObjPoints, ImagePoints, camMatrix, distCoeff,raux,taux);
 
@@ -383,7 +388,6 @@ void Task::getRbs(base::samples::RigidBodyState &rbs, float markerSizeMeters, do
 
     cv::Mat_<double> R,t;
     cv::Rodrigues(rvec,R);
-
     t=tvec;
 
     base::Matrix3d m;
