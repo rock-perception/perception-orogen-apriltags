@@ -189,11 +189,11 @@ void Task::updateHook()
 			double t2=tic();
 			double t_detect = t2-t1; t1=t2;
 
-            if (zarray_size(detections) != 0 & state() != MARKER_DETECTED)
+            if (zarray_size(detections) != 0 && state() != MARKER_DETECTED)
             {
                 state(MARKER_DETECTED);
             }
-            else if(zarray_size(detections) == 0 & state() != NO_MARKER_DETECTED)
+            else if(zarray_size(detections) == 0 && state() != NO_MARKER_DETECTED)
             {
                 state(NO_MARKER_DETECTED);
             }
@@ -224,11 +224,11 @@ void Task::updateHook()
                     if (_marker2camera)
                     {
                         rbs.sourceFrame = getMarkerFrameName(det->id);
-                        rbs.targetFrame = _camera_frame_name.value();
+                        rbs.targetFrame = _camera_frame.value();
                     }
                     else
                     {
-                        rbs.sourceFrame = _camera_frame_name.value();
+                        rbs.sourceFrame = _camera_frame.value();
                         rbs.targetFrame = getMarkerFrameName(det->id);
                     }
                     rbs.time = current_frame_ptr->time;
