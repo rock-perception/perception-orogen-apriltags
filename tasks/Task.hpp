@@ -43,32 +43,32 @@ namespace apriltags {
      */
     class Task : public TaskBase
     {
-	friend class TaskBase;
-    protected:
+        friend class TaskBase;
+        protected:
 
-    apriltags::ApriltagsConfig conf;
-    apriltag_family_t *tf;
-    apriltag_detector_t *td;
+        apriltags::ApriltagsConfig conf;
+        apriltag_family_t *tf;
+        apriltag_detector_t *td;
 
-    cv::Mat camera_k, camera_dist;
-    cv::Mat rvec, tvec;
-    // Maps for faster undistortion:
-    cv::Mat undist_map1, undist_map2;
-    double scaling;
+        cv::Mat camera_k, camera_dist;
+        cv::Mat rvec, tvec;
+        // Maps for faster undistortion:
+        cv::Mat undist_map1, undist_map2;
+        double scaling;
 
 
-    RTT::extras::ReadOnlyPointer<base::samples::frame::Frame> out_frame_ptr;
+        RTT::extras::ReadOnlyPointer<base::samples::frame::Frame> out_frame_ptr;
 
-    std::map<int, double> apriltag_id_to_size_; //Mapping from ID to size
-    
-    void getRbs(base::samples::RigidBodyState &rbs, float markerSizeMeters, double points[][2], cv::Mat  camMatrix,cv::Mat distCoeff)throw(cv::Exception);
-    void draw(cv::Mat &in, double p[][2], double c[], int id, cv::Scalar color, int lineWidth)const;
-    void draw3dAxis(cv::Mat &Image, float marker_size, cv::Mat camera_matrix, cv::Mat dist_matrix);
-    void draw3dCube(cv::Mat &Image,float marker_size,cv::Mat  camMatrix,cv::Mat distCoeff);
-    double tic();
-    std::string getMarkerFrameName(int i);
+        std::map<int, double> apriltag_id_to_size_; //Mapping from ID to size
 
-    public:
+        void getRbs(base::samples::RigidBodyState &rbs, float markerSizeMeters, double points[][2], cv::Mat  camMatrix,cv::Mat distCoeff)throw(cv::Exception);
+        void draw(cv::Mat &in, double p[][2], double c[], int id, cv::Scalar color, int lineWidth)const;
+        void draw3dAxis(cv::Mat &Image, float marker_size, cv::Mat camera_matrix, cv::Mat dist_matrix);
+        void draw3dCube(cv::Mat &Image,float marker_size,cv::Mat  camMatrix,cv::Mat distCoeff);
+        double tic();
+        std::string getMarkerFrameName(int i);
+
+        public:
         /** TaskContext constructor for Task
          * \param name Name of the task. This name needs to be unique to make it identifiable via nameservices.
          * \param initial_state The initial TaskState of the TaskContext. Default is Stopped state.
@@ -84,7 +84,7 @@ namespace apriltags {
 
         /** Default deconstructor of Task
          */
-	~Task();
+        ~Task();
 
         /** This hook is called by Orocos when the state machine transitions
          * from PreOperational to Stopped. If it returns false, then the
@@ -95,8 +95,8 @@ namespace apriltags {
          * in the task context definition with (for example):
          \verbatim
          task_context "TaskName" do
-           needs_configuration
-           ...
+         needs_configuration
+         ...
          end
          \endverbatim
          */
