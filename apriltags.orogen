@@ -29,6 +29,8 @@ task_context "Task" do
               @param bool refine_edges // Spend more time trying to align edges of tags
               @param bool refine_decode // Spend more time trying to decode tags
               @param bool refine_pose // Spend more time trying to precisely localize tags'
+    property("pose_calculation", "bool", true)
+        .doc 'If false, the marker is detected but the pose is not calculated'
     property("camera_calibration", "frame_helper/CameraCalibration")
         .doc 'Calibration parameters for the camera, which are used to undistort and are added as attributes to the frames'
     property("marker_size", "double", -1)
@@ -40,7 +42,7 @@ task_context "Task" do
         .doc 'Write the image on the output_port'
     property("scale_image", "double", 1.0)
         .doc 'applies this scaling to the image and calibration parameters'
-    property("camera_frame_name", "/std/string")
+    property("camera_frame", "/std/string")
         .doc 'Frame name of the camera'
      
 
