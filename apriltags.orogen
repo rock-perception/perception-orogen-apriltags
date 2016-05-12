@@ -42,7 +42,7 @@ task_context "Task" do
         .doc 'Write the image on the output_port'
     property("scale_image", "double", 1.0)
         .doc 'applies this scaling to the image and calibration parameters'
-    property("camera_frame_name", "/std/string")
+    property("camera_frame", "/std/string")
         .doc 'Frame name of the camera'
      
 

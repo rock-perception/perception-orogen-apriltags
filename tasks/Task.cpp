@@ -189,11 +189,11 @@ void Task::updateHook()
 			double t2=tic();
 			double t_detect = t2-t1; t1=t2;
 
-            if (zarray_size(detections) != 0 & state() != MARKER_DETECTED)
+            if (zarray_size(detections) != 0 && state() != MARKER_DETECTED)
             {
                 state(MARKER_DETECTED);
             }
-            else if(zarray_size(detections) == 0 & state() != NO_MARKER_DETECTED)
+            else if(zarray_size(detections) == 0 && state() != NO_MARKER_DETECTED)
             {
                 state(NO_MARKER_DETECTED);
             }
