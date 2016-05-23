@@ -67,6 +67,7 @@ namespace apriltags {
         void draw3dCube(cv::Mat &Image,float marker_size,cv::Mat  camMatrix,cv::Mat distCoeff);
         double tic();
         std::string getMarkerFrameName(int i);
+        std::string getMarkerIdentifierName(int i);
 
         public:
         /** TaskContext constructor for Task

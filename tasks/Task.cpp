@@ -167,7 +167,7 @@ void Task::updateHook()
         int maxiters = conf.iters;
         const int hamm_hist_max = 10;
 
-        std::vector<base::Vector2d> corners;
+        std::vector<apriltags::VisualFeaturePoint> corners;
         //main loop
         for (int iter = 0; iter < maxiters; iter++)
         {
@@ -243,14 +243,18 @@ void Task::updateHook()
                         std::endl;
                 }        
 
+                //set the corners elements;
+                apriltags::VisualFeaturePoint temp;
+                temp.time = current_frame_ptr->time;
+                temp.identifier = getMarkerIdentifierName(det->id); 
                 for (int j=0; j < 4; ++j)
                 {
                     base::Vector2d aux;
                     aux[0] = det->p[j][0];
                     aux[1] = det->p[j][1];
-                    corners.push_back(aux);
+                    temp.points.push_back(aux);
                 }
-
+                corners.push_back(temp);
 
                 if (!conf.quiet)
                     printf("detection %3d: id (%2dx%2d)-%-4d, hamming %d, goodness %8.3f, margin %8.3f\n",
@@ -293,7 +297,7 @@ void Task::updateHook()
             }
 
             //write the corners in the output port
-            if (zarray_size(detections) != 0)
+            if (corners.size() != 0)
             {
                 _detected_corners.write(corners);
                 corners.clear();
@@ -526,3 +530,11 @@ std::string Task::getMarkerFrameName(int i)
     return marker_frame_name;
 }
 
+std::string Task::getMarkerIdentifierName(int i)
+{
+    std::stringstream ss;
+    ss << "apriltag_id_" << i ;
+    std::string identifier_name = ss.str();
+
+    return identifier_name;
+}

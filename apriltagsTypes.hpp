@@ -7,6 +7,9 @@
  * However, it is common that you will only import types from your library, in
  * which case you do not need this file
  */
+#include "base/Time.hpp"
+#include "base/Eigen.hpp"
+#include <vector>
 
 namespace apriltags {
 
@@ -48,6 +51,12 @@ namespace apriltags {
       double marker_size; //in meters  
    };
 
+   struct VisualFeaturePoint
+   {
+       base::Time time;
+       std::string identifier;
+       std::vector<base::Vector2d> points;
+   };
 }
 
 
