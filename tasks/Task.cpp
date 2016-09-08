@@ -218,8 +218,13 @@ void Task::updateHook()
                     size = _marker_size.get();
                 }
 
+                bool pose_calculation = _pose_calculation.get();
+
+                if (size <=0)
+                    pose_calculation = false;
+
                 //Compute pose
-                if(_pose_calculation.get())
+                if(pose_calculation)
                 {
                     base::samples::RigidBodyState rbs;
                     getRbs(rbs, size, det->p, camera_k, cv::Mat());
@@ -264,8 +269,11 @@ void Task::updateHook()
                 if (_draw_image.get())
                 {
                     draw(image,det->p, det->c, det->id, cv::Scalar(0,0,255), 2);
-                    draw3dAxis(image, size, camera_k, cv::Mat());
-                    draw3dCube(image, size, camera_k, cv::Mat());
+                    if(pose_calculation)
+                    {
+                        draw3dAxis(image, size, camera_k, cv::Mat());
+                        draw3dCube(image, size, camera_k, cv::Mat());
+                    }
                 }
 
                 hamm_hist[det->hamming]++;
