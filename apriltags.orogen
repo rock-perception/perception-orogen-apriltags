@@ -40,8 +40,12 @@ task_context "Task" do
 	doc("This property is OPTIONAL. If not set, the marker_size-property is used")
     property("draw_image", "bool", true)
         .doc 'Write the image on the output_port'
+    property("draw_debug_image", "bool", false)
+        .doc 'Write the debug image (apriltag input grayscale image) on the output_port'
     property("scale_image", "double", 1.0)
         .doc 'applies this scaling to the image and calibration parameters'
+    property("stretch_contrast", "bool", false)
+        .doc 'performs a local constrat enhancement'
     property("camera_frame", "/std/string")
         .doc 'Frame name of the camera'
      
@@ -51,6 +55,8 @@ task_context "Task" do
         .doc 'Input image'
 
     #Output Ports
+    #grayscale image 
+    output_port("debug_image", ro_ptr("/base/samples/frame/Frame"))
     output_port("output_image", ro_ptr("/base/samples/frame/Frame"))
         .doc 'Image that shows the detected markers'
     output_port("marker_poses", "std/vector<base::samples::RigidBodyState>")

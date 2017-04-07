@@ -125,7 +125,7 @@ void Task::updateHook()
     frame_helper::FrameHelper frameHelper;
     base::samples::frame::Frame current_frame;
     //main loop for detection in each input frame
-    for(int count=0; _image.read(current_frame_ptr) == RTT::NewData; ++count)
+    while(_image.read(current_frame_ptr, false) == RTT::NewData)
     {
         double t0 = tic();
         //convert base::samples::frame::Frame to grayscale cv::Mat
@@ -140,11 +140,7 @@ void Task::updateHook()
 
         // scale image size
         if(scaling != 1.0)
-        {
-            cv::Mat image_scaled;
-            cv::resize(image, image_scaled, cv::Size(), scaling, scaling);
-            image = image_scaled;
-        }
+            cv::resize(image, image, cv::Size(), scaling, scaling);
 
         // convert to grayscale and undistort both images
         cv::Mat image_gray;
@@ -175,6 +171,15 @@ void Task::updateHook()
                 printf("iter %d / %d\n", iter + 1, maxiters);
             int hamm_hist[hamm_hist_max];
             memset(hamm_hist, 0, sizeof(hamm_hist));
+
+            //enhance contrast
+            if (_stretch_contrast.get())
+            {
+                cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE();
+                clahe->setClipLimit(2);
+                clahe->setTilesGridSize(cv::Size(8, 8));
+                clahe->apply(image_gray, image_gray);
+            }
 
             //convert cv::Mat to image_u8_t
             //copying one row at once
@@ -234,18 +239,6 @@ void Task::updateHook()
                     rbs.targetFrame = _camera_frame.value();
                     rbs.time = current_frame_ptr->time;
                     rbs_vector.push_back(rbs);
-
-                    std::cout << "APRILTAGS ID: " << det->id <<
-                        " x: " << rbs.position.x() <<
-                        " y: " << rbs.position.y() <<
-                        " z: " << rbs.position.z() <<
-                        " roll: "  << rbs.getRoll()*180/M_PI  <<
-                        " pitch: " << rbs.getPitch()*180/M_PI <<
-                        " yaw: "   << rbs.getYaw()*180/M_PI   <<
-                        " undistort_time: " << t_undistort*1000 << " ms " <<
-                        " prepare_time: " << t_prepare*1000 << " ms" <<
-                        " extract_time: " << t_detect*1000 << " ms" <<
-                        std::endl;
                 }        
 
                 //set the corners elements;
@@ -274,6 +267,15 @@ void Task::updateHook()
                     }
                 }
 
+                if (_draw_debug_image.get())
+                {
+                    draw(image_gray,det->p, det->c, det->id, cv::Scalar(255), 2);
+                    if(pose_calculation)
+                    {
+                        draw3dAxis(image, size, camera_k, cv::Mat());
+                        draw3dCube(image, size, camera_k, cv::Mat());
+                    }
+                }
                 hamm_hist[det->hamming]++;
 
                 apriltag_detection_destroy(det);
@@ -292,14 +294,23 @@ void Task::updateHook()
 
             image_u8_destroy(im);
 
-            //write the the image in the output port
             if (_draw_image.get())
             {
                 base::samples::frame::Frame *pframe = out_frame_ptr.write_access();
-                frame_helper::FrameHelper::copyMatToFrame(image,*pframe);
-                pframe->time = base::Time::now();
+                frame_helper::FrameHelper::copyMatToFrame(image, *pframe);
+                pframe->time = current_frame_ptr->time;
                 out_frame_ptr.reset(pframe);
                 _output_image.write(out_frame_ptr);
+            }
+
+            //write the the image in the output port
+            if (_draw_debug_image.get())
+            {
+                base::samples::frame::Frame *pframe = out_frame_ptr.write_access();
+                frame_helper::FrameHelper::copyMatToFrame(image_gray,*pframe);
+                pframe->time = current_frame_ptr->time;
+                out_frame_ptr.reset(pframe);
+                _debug_image.write(out_frame_ptr);
             }
 
             //write the corners in the output port

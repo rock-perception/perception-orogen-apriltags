@@ -101,3 +101,5 @@ conf_param:
   refine_edges: true
   refine_decode: false
   refine_pose: false
+stretch_contrast: true
+draw_debug_image: true
