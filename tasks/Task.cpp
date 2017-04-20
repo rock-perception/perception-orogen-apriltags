@@ -532,7 +532,7 @@ double Task::tic()
 std::string Task::getMarkerFrameName(int i)
 {
     std::stringstream ss;
-    ss << "apriltag_id_" << i << "_frame";
+    ss << "apriltag_" << i << "_frame";
     std::string marker_frame_name = ss.str();
 
     return marker_frame_name;
@@ -541,7 +541,7 @@ std::string Task::getMarkerFrameName(int i)
 std::string Task::getMarkerIdentifierName(int i)
 {
     std::stringstream ss;
-    ss << "apriltag_id_" << i ;
+    ss << "apriltag_" << i ;
     std::string identifier_name = ss.str();
 
     return identifier_name;
