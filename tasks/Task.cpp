@@ -254,10 +254,8 @@ void Task::updateHook()
                 temp.identifier = getMarkerIdentifierName(det->id); 
                 for (int j=0; j < 4; ++j)
                 {
-                    base::Vector2d aux;
-                    aux[0] = det->p[j][0];
-                    aux[1] = det->p[j][1];
-                    temp.points.push_back(aux);
+                    base::Vector2d aux(det->p[j][0], det->p[j][1]);
+                    temp.points.push_back(aux / scaling);
                 }
                 corners.push_back(temp);
 
