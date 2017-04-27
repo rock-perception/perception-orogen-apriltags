@@ -44,8 +44,6 @@ conf_param:
 draw_image: true
 # Value of the marker in meters
 marker_size: -1
-# Name of the source frame
-source_frame: camera_frame
 
 --- name:prosilica_csurvey
 camera_calibration:
@@ -88,7 +86,7 @@ camera_calibration:
   height: 2040
   ex: .nan
   ey: .nan
-marker_size: 0.183
+marker_size: 0.4
 conf_param:
   debug: false
   quiet: true
@@ -97,9 +95,11 @@ conf_param:
   iters: 1
   threads: 4
   decimate: 1.0
-  blur: 0.0
+  blur: 1.0
   refine_edges: true
   refine_decode: false
   refine_pose: false
+pose_calculation: false
 stretch_contrast: true
 draw_debug_image: true
+scale_image: 0.4

@@ -25,8 +25,8 @@ Orocos.run 'apriltags::Task' => 'marker_detector'  do
   
     md.configure
 
-    log.camera_front_left.frame.connect_to md.image
-    #log.camera.frame_raw.connect_to md.image
+    log.camera_aravis_front_right.frame.connect_to md.image
+    #log.camera_aravis_down_right.frame.connect_to md.image
 
     md.start
      
