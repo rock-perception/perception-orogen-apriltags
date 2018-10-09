@@ -163,7 +163,7 @@ void Task::updateHook()
         int maxiters = conf.iters;
         const int hamm_hist_max = 10;
 
-        std::vector<apriltags::VisualFeaturePoint> corners;
+        apriltags::VisualFeaturePoints corners;
         //main loop
         for (int iter = 0; iter < maxiters; iter++)
         {
@@ -250,7 +250,8 @@ void Task::updateHook()
                     base::Vector2d aux(det->p[j][0], det->p[j][1]);
                     temp.points.push_back(aux / scaling);
                 }
-                corners.push_back(temp);
+                corners.feature_points.push_back(temp);
+                corners.time = current_frame_ptr->time;
 
                 if (!conf.quiet)
                     printf("detection %3d: id (%2dx%2d)-%-4d, hamming %d, goodness %8.3f, margin %8.3f\n",
@@ -314,10 +315,10 @@ void Task::updateHook()
             }
 
             //write the corners in the output port
-            if (corners.size() != 0)
+            if (corners.feature_points.size() != 0)
             {
                 _detected_corners.write(corners);
-                corners.clear();
+                corners.feature_points.clear();
             }
 
             //write the markers in the output port

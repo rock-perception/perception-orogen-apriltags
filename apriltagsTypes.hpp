@@ -57,8 +57,13 @@ namespace apriltags {
        std::string identifier;
        std::vector<base::Vector2d> points;
    };
-}
 
+   struct VisualFeaturePoints
+   {
+       base::Time time;
+       std::vector<VisualFeaturePoint> feature_points;
+   };
+}
 
 
 #endif
