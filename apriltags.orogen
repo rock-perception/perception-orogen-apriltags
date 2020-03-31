@@ -63,7 +63,7 @@ task_context "Task" do
         .doc 'It contains the calculated marker poses in respect to camera frame of all visible markers'
     output_port("single_marker_pose", "base::samples::RigidBodyState")
 	.doc 'It contains a single calculated marker pose in respect to camera of a deteted visable marker'
-    output_port("detected_corners", "std/vector<apriltags/VisualFeaturePoint>")
+    output_port("detected_corners", "apriltags/VisualFeaturePoints")
      	.doc 'Writes the camera calibration to be acessible to other components' 	
      	
     runtime_states :MARKER_DETECTED, :NO_MARKER_DETECTED
