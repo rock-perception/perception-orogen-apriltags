@@ -4,6 +4,12 @@
 
 using namespace apriltags;
 
+#if CV_MAJOR_VERSION >= 4
+const int CV_LINE_TYPE = cv::LINE_AA;
+#else
+const int CV_LINE_TYPE = CV_AA
+#endif
+
 Task::Task(std::string const& name)
     : TaskBase(name), out_frame_ptr(new base::samples::frame::Frame())
 {
@@ -430,14 +436,14 @@ void Task::getRbs(base::samples::RigidBodyState &rbs, float markerSizeMeters, do
 
 void Task::draw(cv::Mat &in, double p[][2], double c[], int id, cv::Scalar color, int lineWidth)const
 {
-    cv::line( in,cv::Point(p[0][0], p[0][1]),cv::Point(p[1][0], p[1][1]),color,lineWidth,CV_AA);
-    cv::line( in,cv::Point(p[1][0], p[1][1]),cv::Point(p[2][0], p[2][1]),color,lineWidth,CV_AA);
-    cv::line( in,cv::Point(p[2][0], p[2][1]),cv::Point(p[3][0], p[3][1]),color,lineWidth,CV_AA);
-    cv::line( in,cv::Point(p[3][0], p[3][1]),cv::Point(p[0][0], p[0][1]),color,lineWidth,CV_AA);
+    cv::line( in,cv::Point(p[0][0], p[0][1]),cv::Point(p[1][0], p[1][1]),color,lineWidth,CV_LINE_TYPE);
+    cv::line( in,cv::Point(p[1][0], p[1][1]),cv::Point(p[2][0], p[2][1]),color,lineWidth,CV_LINE_TYPE);
+    cv::line( in,cv::Point(p[2][0], p[2][1]),cv::Point(p[3][0], p[3][1]),color,lineWidth,CV_LINE_TYPE);
+    cv::line( in,cv::Point(p[3][0], p[3][1]),cv::Point(p[0][0], p[0][1]),color,lineWidth,CV_LINE_TYPE);
 
-    cv::rectangle( in,cv::Point(p[0][0], p[0][1]) - cv::Point(2,2),cv::Point(p[0][0], p[0][1])+cv::Point(2,2),cv::Scalar(0,0,255,255),lineWidth,CV_AA);
-    cv::rectangle( in,cv::Point(p[1][0], p[1][1]) - cv::Point(2,2),cv::Point(p[1][0], p[1][1])+cv::Point(2,2),cv::Scalar(0,255,0,255),lineWidth,CV_AA);
-    cv::rectangle( in,cv::Point(p[2][0], p[2][1]) - cv::Point(2,2),cv::Point(p[2][0], p[2][1])+cv::Point(2,2),cv::Scalar(255,0,0,255),lineWidth,CV_AA);
+    cv::rectangle( in,cv::Point(p[0][0], p[0][1]) - cv::Point(2,2),cv::Point(p[0][0], p[0][1])+cv::Point(2,2),cv::Scalar(0,0,255,255),lineWidth,CV_LINE_TYPE);
+    cv::rectangle( in,cv::Point(p[1][0], p[1][1]) - cv::Point(2,2),cv::Point(p[1][0], p[1][1])+cv::Point(2,2),cv::Scalar(0,255,0,255),lineWidth,CV_LINE_TYPE);
+    cv::rectangle( in,cv::Point(p[2][0], p[2][1]) - cv::Point(2,2),cv::Point(p[2][0], p[2][1])+cv::Point(2,2),cv::Scalar(255,0,0,255),lineWidth,CV_LINE_TYPE);
 
 
     char cad[100];
@@ -491,13 +497,13 @@ void Task::draw3dCube(cv::Mat &Image,float marker_size,cv::Mat  camMatrix,cv::Ma
 
     //draw lines of different colours
     for (int i=0;i<4;i++)
-        cv::line(Image,imagePoints[i],imagePoints[(i+1)%4],cv::Scalar(0,0,255,255),1,CV_AA);
+        cv::line(Image,imagePoints[i],imagePoints[(i+1)%4],cv::Scalar(0,0,255,255),1,CV_LINE_TYPE);
 
     for (int i=0;i<4;i++)
-        cv::line(Image,imagePoints[i+4],imagePoints[4+(i+1)%4],cv::Scalar(0,0,255,255),1,CV_AA);
+        cv::line(Image,imagePoints[i+4],imagePoints[4+(i+1)%4],cv::Scalar(0,0,255,255),1,CV_LINE_TYPE);
 
     for (int i=0;i<4;i++)
-        cv::line(Image,imagePoints[i],imagePoints[i+4],cv::Scalar(0,0,255,255),1,CV_AA);
+        cv::line(Image,imagePoints[i],imagePoints[i+4],cv::Scalar(0,0,255,255),1,CV_LINE_TYPE);
 
 
 }
@@ -524,9 +530,9 @@ void Task::draw3dAxis(cv::Mat &Image, float marker_size, cv::Mat camera_matrix, 
     cv::projectPoints( objectPoints, rvec, tvec, camera_matrix, dist_matrix, imagePoints);
     //draw lines of different colours
 
-    cv::line(Image,imagePoints[0],imagePoints[1],cv::Scalar(0,0,255,255),1,CV_AA);
-    cv::line(Image,imagePoints[0],imagePoints[2],cv::Scalar(0,255,0,255),1,CV_AA);
-    cv::line(Image,imagePoints[0],imagePoints[3],cv::Scalar(255,0,0,255),1,CV_AA);
+    cv::line(Image,imagePoints[0],imagePoints[1],cv::Scalar(0,0,255,255),1,CV_LINE_TYPE);
+    cv::line(Image,imagePoints[0],imagePoints[2],cv::Scalar(0,255,0,255),1,CV_LINE_TYPE);
+    cv::line(Image,imagePoints[0],imagePoints[3],cv::Scalar(255,0,0,255),1,CV_LINE_TYPE);
     cv::putText(Image,"x", imagePoints[1],cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0,0,255,255),2);
     cv::putText(Image,"y", imagePoints[2],cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0,255,0,255),2);
     cv::putText(Image,"z", imagePoints[3],cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(255,0,0,255),2);
