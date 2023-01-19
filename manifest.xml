@@ -17,7 +17,6 @@
   <depend package="perception/apriltags" />
   <depend package="image_processing/frame_helper" />
   <depend package="base/types" />
-  <depend package="opencv" />
 
   <tags>needs_opt</tags>
 </package>
