@@ -3,11 +3,6 @@ version "0.1"
 
 using_library "apriltags"
 using_library "frame_helper"
-begin
-	using_library "opencv"
-rescue
-	using_library "opencv4"
-end
 
 import_types_from "base"
 import_types_from "apriltagsTypes.hpp"
