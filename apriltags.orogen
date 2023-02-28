@@ -1,7 +1,7 @@
 name "apriltags"
 version "0.1"
 
-using_library "apriltags"
+using_library "apriltag"
 using_library "frame_helper"
 
 import_types_from "base"

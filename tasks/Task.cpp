@@ -61,12 +61,9 @@ bool Task::configureHook()
 
     // Initialize April-Detector library:
     //set the apriltag family
-    tf = NULL;
+    tf = nullptr;
     switch (conf.family)
     {
-        case TAG25H7:
-            tf = tag25h7_create();
-            break;
         case TAG25H9:
             tf = tag25h9_create();
             break;
@@ -76,12 +73,9 @@ bool Task::configureHook()
         case TAG36H11:
             tf = tag36h11_create();
             break;
-        case TAG36ARTOOLKIT:
-            tf = tag36artoolkit_create();
-            break;
         default:
-            throw std::runtime_error("The desired apriltag family code is not implemented");
-            break;
+            RTT::log(RTT::Error) << "The desired apriltag family code is not implemented" << RTT::endlog();
+            return false;
     }
 
     // create a apriltag detector and add the current family
@@ -92,8 +86,14 @@ bool Task::configureHook()
     td->nthreads = conf.threads;
     td->debug = conf.debug;
     td->refine_edges = conf.refine_edges;
-    td->refine_decode = conf.refine_decode;
-    td->refine_pose = conf.refine_pose;
+    if(conf.refine_decode || conf.refine_pose)
+    {
+        RTT::log(RTT::Error) << "refine_decode and refine_pose are not supported anymore" << RTT::endlog();
+        apriltag_detector_destroy(td);
+        td = nullptr;
+        tf = nullptr;
+        return false;
+    }
 
     std::vector<ApriltagIDToSize> apriltag_size_id = _apriltag_id_to_size.get();
     apriltag_id_to_size_.clear();
@@ -255,8 +255,8 @@ void Task::updateHook()
 
                 if (!conf.quiet)
                     printf("detection %3d: id (%2dx%2d)-%-4d, hamming %d, goodness %8.3f, margin %8.3f\n",
-                            i, det->family->d*det->family->d, det->family->h,
-                            det->id, det->hamming, det->goodness, det->decision_margin);
+                            i, det->family->nbits, det->family->h,
+                            det->id, det->hamming, 0.0f /*det->goodness*/, det->decision_margin);
 
                 if (_draw_image.get())
                 {
@@ -350,9 +350,6 @@ void Task::cleanupHook()
 
     switch (conf.family)
     {
-        case TAG25H7:
-            tag25h7_destroy(tf);
-            break;
         case TAG25H9:
             tag25h9_destroy(tf);
             break;
@@ -362,9 +359,6 @@ void Task::cleanupHook()
         case TAG36H11:
             tag36h11_destroy(tf);
             break;
-        case TAG36ARTOOLKIT:
-            tag36artoolkit_destroy(tf);
-            break;
         default:
             throw std::runtime_error("The desired apriltag family code is not implemented");
             break;
@@ -373,7 +367,7 @@ void Task::cleanupHook()
     TaskBase::cleanupHook();
 }
 
-void Task::getRbs(base::samples::RigidBodyState &rbs, float markerSizeMeters, double points[][2], cv::Mat  camMatrix,cv::Mat distCoeff)throw(cv::Exception)
+void Task::getRbs(base::samples::RigidBodyState &rbs, float markerSizeMeters, double points[][2], cv::Mat  camMatrix,cv::Mat distCoeff)
 {
     if (markerSizeMeters<=0)throw cv::Exception(9004,"markerSize<=0: invalid markerSize","getRbs",__FILE__,__LINE__);
     if (camMatrix.rows==0 || camMatrix.cols==0) throw cv::Exception(9004,"CameraMatrix is empty","getRbs",__FILE__,__LINE__);
